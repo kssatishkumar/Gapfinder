@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="styles.css">
+<style>
+body{margin:0;background:var(--color-bg)}
+a{color:var(--color-accent-700)}
+a:hover{color:var(--color-accent-800)}
+</style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-direction:column;font-family:var(--font-body);color:var(--color-text);background:var(--color-bg)">
+
+<header style="max-width:1168px;width:100%;margin:0 auto;padding:0 24px;box-sizing:border-box">
+  <nav class="nav" style="padding:18px 0;flex-wrap:wrap;gap:20px">
+    <a href="#" onClick="{{ goHome }}" class="nav-brand" style="display:flex;align-items:center;gap:10px;font-size:20px;text-decoration:none">
+      <span style="width:28px;height:28px;border-radius:50%;background:var(--color-accent);display:block;box-shadow:10px 0 0 -4px var(--color-accent-2)"></span>
+      <span style="margin-left:6px">My Big Quest</span>
+    </a>
+    <a href="#" onClick="{{ goGF }}" aria-current="{{ navGF }}">GapFinder</a>
+    <a href="#" onClick="{{ goMentors }}" aria-current="{{ navMentors }}">Mentors</a>
+    <a href="#" onClick="{{ goTips }}" aria-current="{{ navTips }}">Tips</a>
+  </nav>
+</header>
+
+<sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+<main style="max-width:1168px;width:100%;margin:0 auto;padding:32px 24px 96px;box-sizing:border-box;display:flex;flex-direction:column;gap:88px">
+  <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:56px;align-items:center">
+    <div style="display:flex;flex-direction:column;gap:22px;align-items:flex-start;max-width:560px">
+      <span class="tag tag-accent-2" style="font-size:13px;padding:5px 14px">For students in grades 6–12</span>
+      <h1 style="font-size:clamp(38px,5.2vw,58px);margin:0;text-wrap:balance">Find the gaps in your college plan while there’s still time to fix them.</h1>
+      <p style="font-size:18px;margin:0;color:var(--color-neutral-800);text-wrap:pretty;max-width:500px">Plan your moves from middle school to senior year, see what’s missing for the college you want, then talk it through with someone who works in your field.</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px">
+        <button class="btn btn-primary" onClick="{{ goGF }}" style="font-size:17px;padding:14px 26px">Start GapFinder</button>
+        <button class="btn btn-secondary" onClick="{{ goMentors }}" style="font-size:17px;padding:14px 26px">Meet the mentors</button>
+      </div>
+    </div>
+    <div style="position:relative;height:420px;max-width:520px;width:100%">
+      <div style="position:absolute;right:0;top:10px;width:360px;height:360px;border-radius:50%;background:var(--color-accent-2-200)"></div>
+      <div style="position:absolute;left:12%;bottom:0;width:120px;height:120px;border-radius:50%;background:var(--color-accent-200)"></div>
+      <div class="card elev-md" style="position:absolute;left:4%;top:24px;width:270px;background:var(--color-accent-100);border:2px solid var(--color-accent);transform:rotate(-4deg);padding:18px">
+        <div style="display:flex;gap:6px;flex-wrap:wrap"><span class="tag tag-accent">Growth move</span><span class="tag tag-outline">Gateway</span></div>
+        <div class="card-title">Commit to one sport</div>
+        <p class="card-body">Unlocks “Make varsity or team captain” in grades 11–12.</p>
+        <div class="card-meta" style="font-size:12px">Middle school · 2 time · 1 coin</div>
+      </div>
+      <div class="card elev-sm" style="position:absolute;right:2%;top:178px;width:260px;background:var(--color-neutral-100);border:2px dashed var(--color-neutral-400);transform:rotate(3deg);padding:18px">
+        <span class="tag tag-neutral" style="align-self:flex-start">Locked</span>
+        <div class="card-title" style="color:var(--color-neutral-700)">Win or place in a major competition</div>
+        <p class="card-body">Needs “Compete in one academic track” back in middle school.</p>
+      </div>
+      <div class="card elev-lg" style="position:absolute;left:14%;top:282px;width:280px;padding:18px;background:var(--color-bg)">
+        <div class="card-kicker" style="font-size:11px;color:var(--color-accent-700)">Biggest gap</div>
+        <div class="card-title">Course rigor</div>
+        <div style="height:10px;border-radius:999px;background:var(--color-neutral-200);position:relative">
+          <div style="width:38%;height:100%;border-radius:999px;background:var(--color-accent)"></div>
+          <div style="position:absolute;left:65%;top:-4px;width:3px;height:18px;border-radius:2px;background:var(--color-text)"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:28px">
+    <div style="display:flex;flex-direction:column;gap:8px;max-width:620px">
+      <h2 style="margin:0">What 28 students told us</h2>
+      <p style="margin:0;font-size:16px;color:var(--color-neutral-800)">We asked middle and high schoolers what’s getting in the way of preparing for college. Each part of the site answers one of those.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:20px">
+      <div class="card" style="padding:26px;gap:14px">
+        <div style="font-family:var(--font-heading);font-size:44px;line-height:1;color:var(--color-accent-700)">13 of 28</div>
+        <p style="margin:0;font-size:15px">said they don’t know where to start, what colleges want, or which activities count.</p>
+        <div style="height:1px;background:var(--color-divider);margin:6px 0"></div>
+        <div class="card-title" style="font-size:20px">GapFinder</div>
+        <p class="card-body" style="font-size:14px">Plan three stages with a limited budget, then see exactly what’s missing.</p>
+        <button class="btn btn-ghost" onClick="{{ goGF }}" style="align-self:flex-start;font-size:15px">Try GapFinder →</button>
+      </div>
+      <div class="card" style="padding:26px;gap:14px">
+        <div style="font-family:var(--font-heading);font-size:44px;line-height:1;color:var(--color-accent-2-700)">26 of 28</div>
+        <p style="margin:0;font-size:15px">named a field they might want to work in, from medicine to law to marine biology.</p>
+        <div style="height:1px;background:var(--color-divider);margin:6px 0"></div>
+        <div class="card-title" style="font-size:20px">Mentors</div>
+        <p class="card-body" style="font-size:14px">Ask a working professional in that field how they got there.</p>
+        <button class="btn btn-ghost" onClick="{{ goMentors }}" style="align-self:flex-start;font-size:15px">Meet the mentors →</button>
+      </div>
+      <div class="card" style="padding:26px;gap:14px">
+        <div style="font-family:var(--font-heading);font-size:44px;line-height:1;color:var(--color-accent-700)">8 of 28</div>
+        <p style="margin:0;font-size:15px">said not having enough time is what’s in the way.</p>
+        <div style="height:1px;background:var(--color-divider);margin:6px 0"></div>
+        <div class="card-title" style="font-size:20px">Tips</div>
+        <p class="card-body" style="font-size:14px">Short reads on what colleges look for, which activities are worth it, and planning your week.</p>
+        <button class="btn btn-ghost" onClick="{{ goTips }}" style="align-self:flex-start;font-size:15px">Read the tips →</button>
+      </div>
+    </div>
+  </section>
+</main>
+</sc-if>
+
+<sc-if value="{{ isGF }}" hint-placeholder-val="{{ false }}">
+<main style="max-width:1168px;width:100%;margin:0 auto;padding:16px 24px 140px;box-sizing:border-box;display:flex;flex-direction:column;gap:36px">
+  <ol style="list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px">
+    <sc-for list="{{ steps }}" as="st" hint-placeholder-count="5">
+      <li><button onClick="{{ st.onClick }}" disabled="{{ st.disabled }}" style="display:flex;align-items:center;gap:8px;padding:6px 14px 6px 6px;border-radius:999px;border:none;font:inherit;font-size:13px;cursor:pointer;background:{{ st.pillBg }};color:var(--color-text)">
+        <span style="width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;background:{{ st.dotBg }};color:{{ st.dotColor }}">{{ st.num }}</span>
+        <span style="font-weight:{{ st.weight }}">{{ st.label }}</span>
+      </button></li>
+    </sc-for>
+  </ol>
+
+  <sc-if value="{{ isSetup }}" hint-placeholder-val="{{ true }}">
+  <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:48px;align-items:start">
+    <div style="display:flex;flex-direction:column;gap:20px;max-width:540px">
+      <h1 style="margin:0;font-size:clamp(36px,4.6vw,50px)">GapFinder</h1>
+      <p style="margin:0;font-size:17px;color:var(--color-neutral-800);text-wrap:pretty">Test your plan before you live it. Move through three stages, from middle school to senior year, and pick the moves you’d really commit to. You can’t pick everything. At the end, we show what admissions would see, and where the gaps are.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:8px">
+        <div class="card" style="padding:18px;gap:6px">
+          <div style="display:flex;align-items:center;gap:8px;color:var(--color-accent-2-700)">{{ icons.shield }}<span class="card-title" style="color:var(--color-text);font-size:16px">Safety moves</span></div>
+          <p class="card-body" style="font-size:13px">Protect you from what could go wrong: a slipping grade, burnout, losing a recommender.</p>
+        </div>
+        <div class="card" style="padding:18px;gap:6px">
+          <div style="display:flex;align-items:center;gap:8px;color:var(--color-accent-700)">{{ icons.growth }}<span class="card-title" style="color:var(--color-text);font-size:16px">Growth moves</span></div>
+          <p class="card-body" style="font-size:13px">Build an edge admissions weighs: rigor, a deep achievement, leadership, a strong essay.</p>
+        </div>
+        <div class="card" style="padding:18px;gap:6px">
+          <div style="display:flex;align-items:center;gap:8px;color:var(--color-accent-700)">{{ icons.unlock }}<span class="card-title" style="color:var(--color-text);font-size:16px">Gateways and locks</span></div>
+          <p class="card-body" style="font-size:13px">Some early moves unlock a big move later. Skip the gateway and that later move stays locked.</p>
+        </div>
+        <div class="card" style="padding:18px;gap:6px">
+          <div style="display:flex;align-items:center;gap:8px;color:var(--color-neutral-800)">{{ icons.hourglass }}{{ icons.coins }}<span class="card-title" style="color:var(--color-text);font-size:16px">Time and coins</span></div>
+          <p class="card-body" style="font-size:13px">Every move costs time, money, or both. Each stage has a limited budget.</p>
+        </div>
+      </div>
+    </div>
+    <div class="card elev-md" style="padding:30px;gap:20px;background:var(--color-neutral-100)">
+      <h3 style="margin:0">About you</h3>
+      <div class="field"><label>What grade are you in?</label>
+        <select class="input" value="{{ grade }}" onChange="{{ onGrade }}" style="min-height:44px">
+          <sc-for list="{{ gradeOptions }}" as="g" hint-placeholder-count="7"><option value="{{ g.v }}">{{ g.label }}</option></sc-for>
+        </select>
+      </div>
+      <div class="field"><label>Which field are you curious about?</label>
+        <select class="input" value="{{ field }}" onChange="{{ onField }}" style="min-height:44px">
+          <sc-for list="{{ fieldOptions }}" as="f" hint-placeholder-count="7"><option value="{{ f }}">{{ f }}</option></sc-for>
+        </select>
+      </div>
+      <div class="field"><label>Your #1 target college</label>
+        <select class="input" value="{{ college }}" onChange="{{ onCollege }}" style="min-height:44px">
+          <option value="">Choose a college…</option>
+          <sc-for list="{{ collegeOptions }}" as="c" hint-placeholder-count="10"><option value="{{ c.n }}">{{ c.n }}</option></sc-for>
+        </select>
+      </div>
+      <sc-if value="{{ hasCollege }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:6px;padding:14px 16px;border-radius:20px;background:var(--color-accent-2-100)">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="tag tag-accent-2" style="background:var(--color-accent-2-200)">{{ tierLabel }}</span><span style="font-size:14px;font-weight:600">Bar to clear: {{ tierBar }} / 100</span></div>
+          <p style="margin:0;font-size:13px;color:var(--color-accent-2-800)">{{ tierNote }}</p>
+        </div>
+      </sc-if>
+      <button class="btn btn-primary" onClick="{{ startGF }}" disabled="{{ cantStart }}" style="font-size:17px;padding:14px 24px;align-self:flex-start">{{ startLabel }}</button>
+      <p style="margin:0;font-size:12px;color:var(--color-neutral-700)">Your plan is saved on this device only.</p>
+    </div>
+  </section>
+  </sc-if>
+
+  <sc-if value="{{ isStage }}" hint-placeholder-val="{{ false }}">
+  <section style="display:flex;flex-direction:column;gap:14px;max-width:720px">
+    <div class="card-kicker" style="font-size:12px;color:var(--color-accent-700)">Stage {{ stage.n }} of 3 · {{ stage.ages }}</div>
+    <h1 style="margin:0;font-size:clamp(34px,4.4vw,48px)">{{ stage.name }}</h1>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <span class="tag {{ tense.tagClass }}" style="font-size:13px;padding:4px 12px">{{ tense.tag }}</span>
+      <span style="font-size:15px;color:var(--color-neutral-800)">{{ tense.text }}</span>
+    </div>
+    <sc-if value="{{ stage.hasLockNote }}" hint-placeholder-val="{{ false }}">
+      <p style="margin:0;font-size:14px;color:var(--color-neutral-700)">Locked cards need a gateway from an earlier stage. Go back to change it, or live with the gap.</p>
+    </sc-if>
+  </section>
+
+  <sc-for list="{{ groups }}" as="grp" hint-placeholder-count="2">
+  <section style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+      <h3 style="margin:0">{{ grp.title }}</h3>
+      <span style="font-size:14px;color:var(--color-neutral-700)">{{ grp.sub }}</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:14px">
+      <sc-for list="{{ grp.cards }}" as="m" hint-placeholder-count="5">
+        <sc-if value="{{ m.open }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ m.onClick }}" aria-pressed="{{ m.sel }}" style="text-align:left;font:inherit;color:inherit;cursor:pointer;display:flex;flex-direction:column;gap:10px;padding:18px;border-radius:26px;border:2px solid {{ m.border }};background:{{ m.bg }};opacity:{{ m.opacity }};box-shadow:{{ m.shadow }}">
+            <div style="display:flex;gap:6px;align-items:center;width:100%">
+              <span class="tag {{ m.tagClass }}">{{ m.typeLabel }}</span>
+              <sc-if value="{{ m.isGateway }}" hint-placeholder-val="{{ false }}"><span class="tag tag-outline" style="gap:4px">{{ icons.unlockSm }}Gateway</span></sc-if>
+              <span style="margin-left:auto;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;border:2px solid {{ m.checkBorder }};background:{{ m.checkBg }};color:var(--color-bg)">{{ m.checkIcon }}</span>
+            </div>
+            <div style="font-family:var(--font-heading);font-size:18px;line-height:1.2">{{ m.title }}</div>
+            <p style="margin:0;font-size:14px;color:var(--color-neutral-800);text-wrap:pretty">{{ m.desc }}</p>
+            <sc-if value="{{ m.isGateway }}" hint-placeholder-val="{{ false }}">
+              <p style="margin:0;font-size:13px;font-weight:600;color:var(--color-accent-700)">Unlocks later: {{ m.unlocksText }}</p>
+            </sc-if>
+            <div style="display:flex;gap:8px;margin-top:auto;padding-top:4px;flex-wrap:wrap">
+              <span style="display:inline-flex;align-items:center;gap:5px;font-size:13px;padding:3px 10px;border-radius:999px;background:var(--color-bg)">{{ icons.hourglassSm }}{{ m.t }} time</span>
+              <span style="display:inline-flex;align-items:center;gap:5px;font-size:13px;padding:3px 10px;border-radius:999px;background:var(--color-bg)">{{ icons.coinsSm }}{{ m.c }} coins</span>
+            </div>
+          </button>
+        </sc-if>
+        <sc-if value="{{ m.locked }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:10px;padding:18px;border-radius:26px;border:2px dashed var(--color-neutral-400);background:transparent">
+            <div style="display:flex;gap:6px;align-items:center;color:var(--color-neutral-700)">
+              <span class="tag tag-neutral" style="gap:5px;background:var(--color-neutral-200)">{{ icons.lockSm }}Locked</span>
+            </div>
+            <div style="font-family:var(--font-heading);font-size:18px;line-height:1.2;color:var(--color-neutral-700)">{{ m.title }}</div>
+            <p style="margin:0;font-size:14px;color:var(--color-neutral-700)">{{ m.needText }}</p>
+            <button class="btn btn-ghost" onClick="{{ m.goNeed }}" style="align-self:flex-start;font-size:14px;margin-top:auto">Go back to {{ m.needStage }}</button>
+          </div>
+        </sc-if>
+      </sc-for>
+    </div>
+  </section>
+  </sc-for>
+
+  <div style="position:fixed;left:0;right:0;bottom:0;padding:14px 24px;background:color-mix(in srgb,var(--color-bg) 92%,transparent);backdrop-filter:blur(8px);box-shadow:0 -1px 0 var(--color-divider);z-index:5">
+    <div style="max-width:1120px;margin:0 auto;display:flex;align-items:center;gap:24px;flex-wrap:wrap">
+      <sc-for list="{{ meters }}" as="mt" hint-placeholder-count="2">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="display:flex;align-items:center;gap:6px;font-size:14px;font-weight:600">{{ mt.icon }}{{ mt.label }}</span>
+          <div style="display:flex;gap:4px">
+            <sc-for list="{{ mt.dots }}" as="d" hint-placeholder-count="6"><span style="width:14px;height:14px;border-radius:50%;background:{{ d.bg }};box-shadow:inset 0 0 0 2px {{ d.ring }}"></span></sc-for>
+          </div>
+          <span style="font-size:14px;color:{{ mt.color }};font-weight:{{ mt.weight }}">{{ mt.text }}</span>
+        </div>
+      </sc-for>
+      <div style="margin-left:auto;display:flex;gap:10px">
+        <button class="btn btn-secondary" onClick="{{ prevStep }}" style="font-size:15px;padding:11px 20px">Back</button>
+        <button class="btn btn-primary" onClick="{{ nextStep }}" style="font-size:15px;padding:11px 22px">{{ nextLabel }}</button>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ isResults }}" hint-placeholder-val="{{ false }}">
+  <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:28px;align-items:start">
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="card-kicker" style="font-size:12px;color:var(--color-accent-700)">Your GapFinder results · {{ r.collegeName }}</div>
+      <h1 style="margin:0;font-size:clamp(32px,4.2vw,46px);text-wrap:balance">{{ r.headline }}</h1>
+      <p style="margin:0;font-size:16px;color:var(--color-neutral-800);text-wrap:pretty">{{ r.summary }}</p>
+      <div class="card elev-sm" style="padding:24px;gap:16px;background:var(--color-neutral-100);margin-top:8px">
+        <div style="display:flex;align-items:baseline;gap:8px">
+          <span style="font-family:var(--font-heading);font-size:64px;line-height:1;color:{{ r.scoreColor }}">{{ r.score }}</span>
+          <span style="font-size:16px;color:var(--color-neutral-700)">/ 100 application strength</span>
+        </div>
+        <div style="position:relative;height:16px;border-radius:999px;background:var(--color-neutral-200)">
+          <div style="width:{{ r.scoreW }};height:100%;border-radius:999px;background:{{ r.scoreColor }}"></div>
+          <div style="position:absolute;left:{{ r.barW }};top:-6px;width:4px;height:28px;border-radius:2px;background:var(--color-text)"></div>
+        </div>
+        <div style="font-size:13px;color:var(--color-neutral-800)">Black line: the bar for {{ r.tierLabelLower }} colleges ({{ r.bar }}).</div>
+      </div>
+    </div>
+    <div class="card" style="padding:26px;gap:16px">
+      <h4 style="margin:0">What admissions would weigh</h4>
+      <p style="margin:0;font-size:13px;color:var(--color-neutral-700)">Most important first. Orange bars fall short of the line.</p>
+      <sc-for list="{{ r.factors }}" as="f" hint-placeholder-count="7">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;justify-content:space-between;gap:12px;font-size:14px"><span style="font-weight:600">{{ f.label }}</span><span style="color:var(--color-neutral-700)">{{ f.pctText }}</span></div>
+          <div style="position:relative;height:10px;border-radius:999px;background:var(--color-neutral-200)">
+            <div style="width:{{ f.w }};height:100%;border-radius:999px;background:{{ f.color }}"></div>
+            <div style="position:absolute;left:{{ r.barW }};top:-4px;width:3px;height:18px;border-radius:2px;background:var(--color-text)"></div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:16px">
+    <h2 style="margin:0">Your biggest gaps</h2>
+    <sc-if value="{{ r.noGaps }}" hint-placeholder-val="{{ false }}">
+      <div class="card" style="padding:22px;background:var(--color-accent-2-100)"><div class="card-title">Every factor clears the bar.</div><p class="card-body" style="font-size:14px">Keep the safety moves going so nothing slips, and check the risks below.</p></div>
+    </sc-if>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px">
+      <sc-for list="{{ r.gaps }}" as="g" hint-placeholder-count="3">
+        <div class="card" style="padding:22px;gap:10px;background:var(--color-accent-100)">
+          <div style="display:flex;align-items:center;gap:10px"><span style="width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--color-accent);color:var(--color-bg);font-weight:700;font-size:14px">{{ g.rank }}</span><span class="card-title" style="font-size:19px">{{ g.label }}</span></div>
+          <p style="margin:0;font-size:14px;color:var(--color-accent-900);text-wrap:pretty">{{ g.fix }}</p>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:20px;align-items:start">
+    <div class="card" style="padding:24px;gap:12px">
+      <div style="display:flex;align-items:center;gap:8px;color:var(--color-accent-2-700)">{{ icons.shield }}<h4 style="margin:0;color:var(--color-text)">Unprotected risks</h4></div>
+      <sc-if value="{{ r.noRisks }}" hint-placeholder-val="{{ false }}"><p style="margin:0;font-size:14px">You picked at least one safety move for every kind of risk.</p></sc-if>
+      <sc-for list="{{ r.risks }}" as="k" hint-placeholder-count="2">
+        <div style="display:flex;flex-direction:column;gap:2px;padding:12px 14px;border-radius:18px;background:var(--color-bg)">
+          <span style="font-weight:600;font-size:14px">{{ k.label }}</span>
+          <span style="font-size:13px;color:var(--color-neutral-800)">{{ k.fix }}</span>
+        </div>
+      </sc-for>
+    </div>
+    <div class="card" style="padding:24px;gap:12px">
+      <div style="display:flex;align-items:center;gap:8px;color:var(--color-neutral-700)">{{ icons.lock }}<h4 style="margin:0;color:var(--color-text)">Doors you closed</h4></div>
+      <sc-if value="{{ r.noClosed }}" hint-placeholder-val="{{ false }}"><p style="margin:0;font-size:14px">None. Every late-stage move was still open to you.</p></sc-if>
+      <sc-for list="{{ r.closed }}" as="k" hint-placeholder-count="2">
+        <div style="display:flex;flex-direction:column;gap:2px;padding:12px 14px;border-radius:18px;border:2px dashed var(--color-neutral-300)">
+          <span style="font-weight:600;font-size:14px">{{ k.title }}</span>
+          <span style="font-size:13px;color:var(--color-neutral-800)">{{ k.why }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:20px;align-items:start">
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <h2 style="margin:0">What to do next</h2>
+      <p style="margin:0;font-size:15px;color:var(--color-neutral-800)">Moves still open to you that close your biggest gaps, starting with what you can do in {{ r.gradeLabel }}.</p>
+      <sc-if value="{{ r.noSteps }}" hint-placeholder-val="{{ false }}"><p style="margin:0;font-size:14px">Nothing left to add for your top gaps. Focus on doing the moves you picked well.</p></sc-if>
+      <ol style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px">
+        <sc-for list="{{ r.steps }}" as="n" hint-placeholder-count="4">
+          <li style="display:flex;gap:14px;align-items:flex-start;padding:14px 16px;border-radius:22px;background:var(--color-surface)">
+            <span class="tag {{ n.whenClass }}" style="flex:none;margin-top:2px">{{ n.when }}</span>
+            <div style="display:flex;flex-direction:column;gap:2px"><span style="font-weight:600;font-size:15px">{{ n.title }}</span><span style="font-size:13px;color:var(--color-neutral-800)">Helps with {{ n.helps }}</span></div>
+          </li>
+        </sc-for>
+      </ol>
+    </div>
+    <div class="card elev-md" style="padding:26px;gap:14px;background:var(--color-accent-2-100)">
+      <div class="card-kicker" style="font-size:11px;color:var(--color-accent-2-800)">Talk it through</div>
+      <div style="display:flex;gap:14px;align-items:center">
+        <span style="width:56px;height:56px;border-radius:50%;flex:none;display:grid;place-items:center;background:var(--color-accent-2);color:var(--color-bg);font-family:var(--font-heading);font-size:20px">{{ r.mentor.initials }}</span>
+        <div style="display:flex;flex-direction:column"><span class="card-title" style="font-size:19px">{{ r.mentor.name }}</span><span style="font-size:14px;color:var(--color-accent-2-900)">{{ r.mentor.role }}</span></div>
+      </div>
+      <p style="margin:0;font-size:14px;color:var(--color-accent-2-900)">{{ r.mentorWhy }}</p>
+      <button class="btn btn-primary" onClick="{{ r.askMentor }}" style="align-self:flex-start;font-size:15px;padding:11px 20px">Send my gaps to {{ r.mentor.first }}</button>
+    </div>
+  </section>
+
+  <section style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+    <button class="btn btn-secondary" onClick="{{ editPlan }}" style="font-size:15px;padding:11px 20px">Edit my plan</button>
+    <button class="btn btn-ghost" onClick="{{ resetGF }}" style="font-size:15px">Start over</button>
+    <p style="margin:0 0 0 auto;font-size:12px;color:var(--color-neutral-700);max-width:520px">Weighting follows NACAC’s Factors in the Admission Decision: grades and rigor first, then tests, then essays, recommendations and activities. A planning tool, not a prediction. Tiers are rough, and some majors are more competitive than the school overall.</p>
+  </section>
+  </sc-if>
+</main>
+</sc-if>
+
+<sc-if value="{{ isMentors }}" hint-placeholder-val="{{ false }}">
+<main style="max-width:1168px;width:100%;margin:0 auto;padding:32px 24px 96px;box-sizing:border-box;display:flex;flex-direction:column;gap:32px">
+  <section style="display:flex;flex-direction:column;gap:14px;max-width:640px">
+    <h1 style="margin:0;font-size:clamp(36px,4.6vw,50px)">Talk to someone who does the job</h1>
+    <p style="margin:0;font-size:17px;color:var(--color-neutral-800);text-wrap:pretty">Working professionals who give 20 minutes to answer your questions about their field, and what they’d do at your age. A parent or guardian is copied on every request.</p>
+  </section>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <sc-for list="{{ filters }}" as="fl" hint-placeholder-count="7">
+      <button onClick="{{ fl.onClick }}" style="font:inherit;font-size:14px;padding:8px 16px;border-radius:999px;cursor:pointer;border:1.5px solid {{ fl.border }};background:{{ fl.bg }};color:{{ fl.color }}">{{ fl.label }}</button>
+    </sc-for>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:18px">
+    <sc-for list="{{ mentorCards }}" as="mm" hint-placeholder-count="6">
+      <div class="card" style="padding:24px;gap:14px">
+        <div style="display:flex;gap:14px;align-items:center">
+          <span style="width:56px;height:56px;border-radius:50%;flex:none;display:grid;place-items:center;background:{{ mm.avatarBg }};color:var(--color-bg);font-family:var(--font-heading);font-size:20px">{{ mm.initials }}</span>
+          <div style="display:flex;flex-direction:column;gap:2px"><span class="card-title" style="font-size:19px">{{ mm.name }}</span><span style="font-size:14px;color:var(--color-neutral-800)">{{ mm.role }}</span></div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap"><span class="tag tag-accent-2">{{ mm.field }}</span><span class="tag tag-neutral">{{ mm.years }} years in the field</span></div>
+        <p style="margin:0;font-size:14px;color:var(--color-neutral-900);text-wrap:pretty">{{ mm.bio }}</p>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <span style="font-size:12px;color:var(--color-neutral-700)">Ask about</span>
+          <div style="display:flex;gap:6px;flex-wrap:wrap"><sc-for list="{{ mm.helps }}" as="h" hint-placeholder-count="3"><span class="tag tag-outline" style="color:var(--color-accent-700);border-color:var(--color-accent-400)">{{ h }}</span></sc-for></div>
+        </div>
+        <button class="btn {{ mm.btnClass }}" onClick="{{ mm.onAsk }}" disabled="{{ mm.sent }}" style="margin-top:auto;align-self:flex-start;font-size:15px;padding:10px 20px">{{ mm.btnLabel }}</button>
+      </div>
+    </sc-for>
+  </div>
+</main>
+</sc-if>
+
+<sc-if value="{{ isTips }}" hint-placeholder-val="{{ false }}">
+<main style="max-width:1168px;width:100%;margin:0 auto;padding:32px 24px 96px;box-sizing:border-box;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:48px;align-items:start">
+  <aside style="display:flex;flex-direction:column;gap:18px;max-width:360px">
+    <h1 style="margin:0;font-size:clamp(36px,4.6vw,50px)">Tips</h1>
+    <p style="margin:0;font-size:16px;color:var(--color-neutral-800)">Short answers to the questions students asked most in our survey.</p>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <sc-for list="{{ tipNav }}" as="tn" hint-placeholder-count="4">
+        <button onClick="{{ tn.onClick }}" style="text-align:left;font:inherit;font-size:15px;padding:14px 18px;border-radius:22px;cursor:pointer;border:none;display:flex;align-items:center;gap:12px;background:{{ tn.bg }};color:{{ tn.color }}">
+          <span style="font-family:var(--font-heading);font-size:15px;width:28px;height:28px;flex:none;border-radius:50%;display:grid;place-items:center;background:{{ tn.numBg }};color:{{ tn.numColor }}">{{ tn.num }}</span>{{ tn.title }}
+        </button>
+      </sc-for>
+    </div>
+  </aside>
+  <article style="display:flex;flex-direction:column;gap:22px;max-width:680px;grid-column:span 2;min-width:0">
+    <div class="card-kicker" style="font-size:12px;color:var(--color-accent-700)">{{ tip.kicker }}</div>
+    <h2 style="margin:0;font-size:clamp(30px,3.6vw,40px);text-wrap:balance">{{ tip.title }}</h2>
+    <p style="margin:0;font-size:18px;color:var(--color-neutral-900);text-wrap:pretty">{{ tip.lead }}</p>
+    <ol style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px">
+      <sc-for list="{{ tip.points }}" as="pt" hint-placeholder-count="4">
+        <li style="display:flex;gap:16px;align-items:flex-start;padding:18px 20px;border-radius:24px;background:var(--color-surface)">
+          <span style="flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--color-bg);font-weight:700;font-size:14px">{{ pt.n }}</span>
+          <div style="display:flex;flex-direction:column;gap:4px"><span style="font-weight:700;font-size:16px">{{ pt.h }}</span><span style="font-size:15px;color:var(--color-neutral-900);text-wrap:pretty">{{ pt.b }}</span></div>
+        </li>
+      </sc-for>
+    </ol>
+    <figure style="margin:0;padding:22px 24px;border-radius:28px;background:var(--color-accent-2-100);display:flex;flex-direction:column;gap:8px">
+      <blockquote style="margin:0;font-family:var(--font-heading);font-size:20px;line-height:1.3;color:var(--color-accent-2-900)">“{{ tip.quote }}”</blockquote>
+      <figcaption style="font-size:13px;color:var(--color-accent-2-800);margin:0">{{ tip.quoteNote }}</figcaption>
+    </figure>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+      <button class="btn btn-primary" onClick="{{ tip.onCta }}" style="font-size:15px;padding:11px 20px">{{ tip.cta }}</button>
+      <span style="font-size:12px;color:var(--color-neutral-700)">{{ tip.source }}</span>
+    </div>
+  </article>
+</main>
+</sc-if>
+
+<sc-if value="{{ dialogOpen }}" hint-placeholder-val="{{ false }}">
+  <div class="dialog-backdrop" onClick="{{ closeDialog }}" style="z-index:20">
+    <div class="dialog" onClick="{{ stop }}" role="dialog" aria-modal="true" style="width:min(500px,100%)">
+      <sc-if value="{{ dialogForm }}" hint-placeholder-val="{{ true }}">
+        <div class="dialog-title" style="font-size:24px">Ask {{ dm.first }} for a chat</div>
+        <p class="dialog-body" style="margin:0">{{ dm.name }} · {{ dm.role }}. Chats are 20-minute video calls. Your parent or guardian gets a copy of this request.</p>
+        <div class="field"><label>Your message</label><textarea class="input" value="{{ msg }}" onChange="{{ onMsg }}" style="min-height:140px;border-radius:22px;font-size:15px"></textarea></div>
+        <div class="dialog-actions">
+          <button class="btn btn-secondary" onClick="{{ closeDialog }}" style="font-size:15px;padding:10px 18px">Cancel</button>
+          <button class="btn btn-primary" onClick="{{ sendRequest }}" disabled="{{ cantSend }}" style="font-size:15px;padding:10px 20px">Send request</button>
+        </div>
+      </sc-if>
+      <sc-if value="{{ dialogSent }}" hint-placeholder-val="{{ false }}">
+        <div class="dialog-title" style="font-size:24px">Request sent</div>
+        <p class="dialog-body" style="margin:0">{{ dm.first }} usually replies within a few days. We’ll email you and your parent or guardian with times that work.</p>
+        <div class="dialog-actions"><button class="btn btn-primary" onClick="{{ closeDialog }}" style="font-size:15px;padding:10px 20px">Done</button></div>
+      </sc-if>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+  <div role="status" style="position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:30;padding:12px 20px;border-radius:999px;background:var(--color-neutral-900);color:var(--color-bg);font-size:14px;box-shadow:var(--shadow-lg);max-width:calc(100% - 48px)">{{ toast }}</div>
+</sc-if>
+
+<footer style="margin-top:auto;max-width:1168px;width:100%;margin-left:auto;margin-right:auto;padding:28px 24px 40px;box-sizing:border-box;display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:13px;color:var(--color-neutral-700)">
+  <span style="font-family:var(--font-heading);font-size:16px;color:var(--color-text)">My Big Quest</span>
+  <span>Built from a survey of 28 students in grades 7–9.</span>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;startScreen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;home&quot;,&quot;gf&quot;,&quot;mentors&quot;,&quot;tips&quot;],&quot;default&quot;:&quot;home&quot;,&quot;tsType&quot;:&quot;'home'|'gf'|'mentors'|'tips'&quot;,&quot;section&quot;:&quot;Prototype&quot;},&quot;strictBudget&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;GapFinder&quot;}}">
+const STAGES = [
+  { n: 1, name: 'Middle school', ages: 'ages 11–13', short: 'middle school', budget: { t: 6, c: 4 } },
+  { n: 2, name: 'Early high school', ages: 'grades 9–10', short: 'early high school', budget: { t: 7, c: 4 } },
+  { n: 3, name: 'Late high school', ages: 'grades 11–12', short: 'late high school', budget: { t: 7, c: 6 } },
+];
+const MOVES = [
+  { id: 'habits', s: 1, type: 'safety', title: 'Build strong study habits now', desc: 'A steady homework and review routine, so good grades feel normal before the work gets hard.', t: 1, c: 0, f: { grades: 3 }, risk: 'grades' },
+  { id: 'mentors2', s: 1, type: 'safety', title: 'Line up two mentors, not one', desc: 'Keep a second teacher or coach who knows your work, so you’re never stuck if one is busy.', t: 1, c: 0, f: { recs: 1 }, risk: 'recs' },
+  { id: 'sleep', s: 1, type: 'safety', title: 'Protect your sleep and energy', desc: 'A regular schedule so school, activities and rest all fit, and you don’t burn out early.', t: 1, c: 0, f: { grades: 1 }, risk: 'burnout' },
+  { id: 'record', s: 1, type: 'safety', title: 'Keep a simple record of what you do', desc: 'Log activities, awards and roles as they happen, so nothing is forgotten when you apply.', t: 1, c: 0, f: { essays: 1 }, risk: 'paper' },
+  { id: 'save', s: 1, type: 'safety', title: 'Save a little each month', desc: 'A small fund so a camp, contest fee or trip isn’t out of reach.', t: 1, c: 1, f: {}, risk: 'money' },
+  { id: 'sport', s: 1, type: 'growth', title: 'Commit to one sport', desc: 'Stick with one sport instead of trying a new one every season.', t: 2, c: 1, f: { depth: 1 } },
+  { id: 'compete', s: 1, type: 'growth', title: 'Compete in one academic track', desc: 'Math olympiad, science fair, debate or robotics.', t: 2, c: 1, f: { depth: 1 } },
+  { id: 'art', s: 1, type: 'growth', title: 'Start an instrument or art form seriously', desc: 'Begin now and practice on a schedule.', t: 2, c: 1, f: { depth: 1 } },
+  { id: 'club', s: 1, type: 'growth', title: 'Join a club and take a real role', desc: 'Build leadership early with an officer or lead role.', t: 2, c: 0, f: { lead: 2 } },
+  { id: 'service', s: 1, type: 'growth', title: 'Turn a skill into steady service', desc: 'Use what you’re good at for one cause, regularly. The start of a real-impact story.', t: 2, c: 0, f: { lead: 2 } },
+  { id: 'honors', s: 1, type: 'growth', title: 'Qualify for the honors track', desc: 'Prep for honors placement so you can take the harder courses colleges weigh heavily.', t: 2, c: 1, f: { rigor: 2 } },
+  { id: 'catch', s: 2, type: 'safety', title: 'Catch a slipping grade early', desc: 'Act at the first dip: office hours, a tutor, a study group. Before it hits your GPA.', t: 1, c: 0, f: { grades: 3 }, risk: 'grades' },
+  { id: 'teachers2', s: 2, type: 'safety', title: 'Keep two teachers who know you well', desc: 'Two real relationships means strong recommenders and backup feedback.', t: 1, c: 0, f: { recs: 2 }, risk: 'recs' },
+  { id: 'health', s: 2, type: 'safety', title: 'Protect your health in busy terms', desc: 'A pacing habit so exam and activity crunches don’t burn you out.', t: 1, c: 0, f: { grades: 1 }, risk: 'burnout' },
+  { id: 'map', s: 2, type: 'safety', title: 'Plan your 4-year course map', desc: 'Map the honors and AP sequence with an adviser, so you never miss a prerequisite.', t: 1, c: 0, f: { rigor: 1 }, risk: 'paper' },
+  { id: 'firstap', s: 2, type: 'growth', title: 'Take your first honors or AP courses', desc: 'Start the rigorous track, the #2 thing admissions looks at.', t: 2, c: 0, f: { rigor: 3 } },
+  { id: 'project', s: 2, type: 'growth', title: 'Start a long-term passion or research project', desc: 'Begin something real now that you can keep building for years.', t: 2, c: 1, f: { depth: 2 } },
+  { id: 'comp3', s: 2, type: 'growth', needs: 'compete', title: 'Enter 3 competitions, aim to place in 1', desc: 'A solid competition record.', t: 3, c: 1, f: { depth: 2 } },
+  { id: 'deepen', s: 2, type: 'growth', title: 'Go deeper in one activity', desc: 'Go further in one commitment instead of adding many. Depth beats a long list.', t: 2, c: 0, f: { depth: 2 } },
+  { id: 'steady', s: 2, type: 'growth', title: 'Keep up steady service or leadership', desc: 'Carry your club or service from middle school into a multi-year record.', t: 2, c: 0, f: { lead: 2 } },
+  { id: 'hard', s: 2, type: 'growth', title: 'Take on something hard on purpose', desc: 'A harder class or challenge that builds grit and ability.', t: 1, c: 0, f: { rigor: 1, grades: 1 } },
+  { id: 'gpa', s: 3, type: 'safety', title: 'Protect your GPA in the hardest year', desc: 'Keep a recovery habit (office hours, a tutor) so junior-year rigor doesn’t sink your grades.', t: 2, c: 0, f: { grades: 3 }, risk: 'grades' },
+  { id: 'sat', s: 3, type: 'safety', title: 'Prep for the SAT/ACT with a backup date', desc: 'Study on a timeline with room to retake. More colleges are requiring scores again.', t: 2, c: 1, f: { tests: 4 }, risk: 'tests' },
+  { id: 'letters', s: 3, type: 'safety', title: 'Secure two strong recommendation letters', desc: 'Ask early and give recommenders your record, so the letters are specific.', t: 1, c: 0, f: { recs: 3 }, risk: 'recs' },
+  { id: 'timeline', s: 3, type: 'safety', title: 'Build your application timeline early', desc: 'Every deadline (tests, essays, apps) in one place so nothing is missed.', t: 1, c: 0, f: { essays: 1 }, risk: 'paper' },
+  { id: 'reserve', s: 3, type: 'safety', title: 'Keep a cash reserve for applications', desc: 'A buffer for app fees, visits and score reports, or use fee waivers.', t: 0, c: 2, f: {}, risk: 'money' },
+  { id: 'win', s: 3, type: 'growth', needs: 'comp3', title: 'Win or place in a major competition', desc: 'A standout result.', t: 4, c: 1, f: { depth: 4 } },
+  { id: 'varsity', s: 3, type: 'growth', needs: 'sport', title: 'Make varsity or team captain', desc: 'A top athletic result and a leadership role.', t: 3, c: 1, f: { depth: 3, lead: 1 } },
+  { id: 'artsd', s: 3, type: 'growth', needs: 'art', title: 'Earn an arts distinction', desc: 'A recital, exhibit or award others recognize.', t: 3, c: 1, f: { depth: 4 } },
+  { id: 'publish', s: 3, type: 'growth', needs: 'project', title: 'Publish or showcase your project', desc: 'Real work other people can see.', t: 3, c: 1, f: { depth: 4 } },
+  { id: 'heavyap', s: 3, type: 'growth', needs: 'firstap', title: 'Carry a heavy AP course load', desc: 'The course rigor colleges weigh heavily.', t: 3, c: 0, f: { rigor: 4, tests: 1 } },
+  { id: 'leader', s: 3, type: 'growth', title: 'Take a real leadership role', desc: 'Lead a club, team or initiative as president or founder, not just a member.', t: 2, c: 0, f: { lead: 3 } },
+  { id: 'essays', s: 3, type: 'growth', title: 'Write and revise standout essays', desc: 'The one part fully in your control. It ties your record together.', t: 3, c: 0, f: { essays: 4 } },
+  { id: 'summer', s: 3, type: 'growth', title: 'Do a meaningful summer', desc: 'A program, internship or project that deepens your field.', t: 2, c: 2, f: { depth: 2, essays: 1 } },
+];
+const BYID = Object.fromEntries(MOVES.map(m => [m.id, m]));
+const FACTORS = [
+  { k: 'grades', label: 'Grades', w: .30, cap: 10, fix: 'Grades are the biggest thing colleges look at. A study routine now and catching a dip early protect them more than anything else.' },
+  { k: 'rigor', label: 'Course rigor', w: .20, cap: 10, fix: 'Colleges want to see you took the hardest classes you could handle. Getting on the honors track early is what unlocks heavy AP later.' },
+  { k: 'tests', label: 'SAT / ACT', w: .15, cap: 4, fix: 'More colleges are requiring test scores again. Plan prep on a timeline with a backup date for a retake.' },
+  { k: 'depth', label: 'A deep achievement', w: .15, cap: 8, fix: 'You need one thing you went really far with. Pick a gateway (a sport, a competition track, an art, or a long project) and stick with it.' },
+  { k: 'lead', label: 'Leadership & service', w: .08, cap: 6, fix: 'Leading something counts for more than being a member. Take a real role in a club or a cause and keep it going for years.' },
+  { k: 'essays', label: 'Essays', w: .06, cap: 5, fix: 'Essays are the one part fully in your control. Keep a record of what you do now, so you have real stories to tell later.' },
+  { k: 'recs', label: 'Recommendations', w: .06, cap: 5, fix: 'Strong letters come from teachers who know you well. Build two of those relationships, not one.' },
+];
+const RISKS = [
+  { k: 'grades', label: 'A slipping grade has no safety net', fix: 'Add a study routine, or a plan to catch dips early.' },
+  { k: 'recs', label: 'No backup if a recommender falls through', fix: 'Keep two teachers or mentors who know your work.' },
+  { k: 'burnout', label: 'Nothing protecting you from burnout', fix: 'Protect sleep and pace busy terms.' },
+  { k: 'paper', label: 'Deadlines and records could slip', fix: 'Keep a record of activities and one timeline for deadlines.' },
+  { k: 'money', label: 'Fees could force you to cut something', fix: 'Save a little early, keep a reserve, or plan to use fee waivers.' },
+  { k: 'tests', label: 'No plan for the SAT/ACT', fix: 'Pick a test date with a backup, and study on a schedule.' },
+];
+const TIERS = {
+  most: { label: 'Most selective', bar: 72, note: 'Admits a small share of applicants. Almost every factor has to be strong.' },
+  high: { label: 'Highly selective', bar: 60, note: 'Strong grades and rigor are expected. One deep achievement helps you stand out.' },
+  sel: { label: 'Selective', bar: 48, note: 'Solid grades and rigor carry most of the weight. Some majors are much more competitive.' },
+  broad: { label: 'More open', bar: 35, note: 'Steady grades and finishing strong matter most.' },
+};
+const COLLEGES = [
+  ['University of Washington', 'sel'], ['Stanford', 'most'], ['Harvard', 'most'], ['MIT', 'most'], ['Princeton', 'most'], ['Columbia', 'most'], ['Duke', 'most'], ['Johns Hopkins', 'most'], ['Rice', 'most'], ['Cornell', 'most'], ['UPenn (Wharton)', 'most'], ['UCLA', 'most'], ['UC Berkeley', 'high'], ['Carnegie Mellon', 'high'], ['University of Michigan', 'high'], ['Emory', 'high'], ['NYU', 'high'], ['USC', 'high'], ['WashU in St. Louis', 'high'], ['UC Irvine', 'high'], ['University of Waterloo', 'high'], ['University of Portland', 'broad'], ['John Jay College', 'broad'], ['Not sure yet', 'sel'],
+].map(([n, tier]) => ({ n, tier }));
+const FIELDS = ['Medicine & health', 'Engineering & tech', 'Science & research', 'Business & finance', 'Law & government', 'Arts & design', 'Not sure yet'];
+const MENTORS = [
+  { id: 'raman', name: 'Dr. Priya Raman', role: 'Pediatrician', field: 'Medicine & health', years: 12, bio: 'Went from a community college start to medical school. Happy to talk honestly about the pre-med path.', helps: ['Pre-med path', 'Hospital volunteering', 'Science classes'] },
+  { id: 'abrams', name: 'Ruth Abrams', role: 'Epidemiologist, county health dept.', field: 'Medicine & health', years: 9, bio: 'Tracks disease outbreaks with data. Public health is medicine without the white coat.', helps: ['Public health careers', 'Stats & data', 'Research projects'] },
+  { id: 'bell', name: 'Marcus Bell', role: 'Software engineer', field: 'Engineering & tech', years: 8, bio: 'Builds apps used by millions. Started by making games in middle school.', helps: ['Learning to code', 'Passion projects', 'Robotics & comps'] },
+  { id: 'ortiz', name: 'Elena Ortiz', role: 'Structural engineer', field: 'Engineering & tech', years: 14, bio: 'Designs bridges and buildings. Ask her about architecture versus engineering.', helps: ['Architecture vs. engineering', 'Math & physics', 'Internships'] },
+  { id: 'okafor', name: 'Dr. Amara Okafor', role: 'Marine biologist', field: 'Science & research', years: 11, bio: 'Studies coral reefs. Did her first research project as a high school junior.', helps: ['Finding research', 'Science fair', 'Field work'] },
+  { id: 'tanaka', name: 'Kenji Tanaka', role: 'Financial analyst', field: 'Business & finance', years: 7, bio: 'Works on investments at a bank. Ran a small business selling custom stickers in high school.', helps: ['Business & finance', 'Starting a venture', 'DECA & comps'] },
+  { id: 'nguyen', name: 'Tom Nguyen', role: 'Founder of a youth nonprofit', field: 'Business & finance', years: 10, bio: 'Started a free tutoring program at 16 that now runs in 30 schools.', helps: ['Starting a nonprofit', 'Leadership', 'Fundraising'] },
+  { id: 'whitfield', name: 'Dana Whitfield', role: 'Public defender', field: 'Law & government', years: 15, bio: 'Represents people in court who can’t afford a lawyer. Debate kid turned lawyer.', helps: ['Law careers', 'Debate', 'Political science'] },
+  { id: 'lindqvist', name: 'Sofia Lindqvist', role: 'Illustrator & product designer', field: 'Arts & design', years: 9, bio: 'Moves between picture books and app design. Ask her how to build a portfolio.', helps: ['Building a portfolio', 'Art programs', 'Design careers'] },
+  { id: 'cole', name: 'Jasmine Cole', role: 'Career coach', field: 'Not sure yet', years: 13, bio: 'Helps students who don’t know what they want yet find a direction worth trying.', helps: ['Finding a passion', 'Exploring fields', 'Picking activities'] },
+].map(m => ({ ...m, first: m.name.replace('Dr. ', '').split(' ')[0], initials: m.name.replace('Dr. ', '').split(' ').map(w => w[0]).join('').slice(0, 2) }));
+const TIPS = [
+  { id: 'look', kicker: 'Admissions', title: 'What colleges actually look for', lead: 'Colleges weigh a few things much more than everything else. Knowing the order tells you where your time goes furthest.', points: [
+    { h: 'Grades in your core classes', b: 'This is the biggest factor by far. A steady record across all four years counts for more than one great semester.' },
+    { h: 'How hard your classes are', b: 'Honors, AP or IB when you’re ready. Colleges compare you with what your school offered, not with every school.' },
+    { h: 'SAT or ACT scores', b: 'Several colleges that went test-optional now require scores again. Check each school on your list.' },
+    { h: 'Essays, letters and activities', b: 'These come next. Colleges look for depth: what you stuck with, and what changed because you were there.' },
+  ], quote: 'What do colleges want to see in an applicant', quoteNote: 'The most common question in our survey, asked in some form by 8 students', cta: 'See how your plan stacks up', ctaTo: 'gf', source: 'Based on NACAC’s Factors in the Admission Decision.' },
+  { id: 'acts', kicker: 'Activities', title: 'Which activities are worth it', lead: 'There’s no list of “right” activities. What counts is how long you stayed, how far you went, and what you did with it.', points: [
+    { h: 'One or two, for years', b: 'Two long commitments say more than ten clubs you joined once.' },
+    { h: 'Room to grow', b: 'Look for a path from member to leader to starting something new.' },
+    { h: 'Results someone else can see', b: 'A placement, a performance, a finished project, people you helped.' },
+    { h: 'Middle school is for trying', b: 'Switching now is fine. Pick the thing you’d keep doing even if it didn’t go on an application.' },
+  ], quote: 'It mostly just matters when you’re really good at it so that you stand out from other people.', quoteNote: 'A student, in our survey', cta: 'Find your gateway moves', ctaTo: 'gf', source: '' },
+  { id: 'time', kicker: 'Planning', title: 'Time management and study plans', lead: 'Not having enough time was the top thing in the way for students in our survey. A simple weekly plan fixes more than willpower does.', points: [
+    { h: 'Plan the week on Sunday', b: 'Put fixed things in first (school, practice, family), then homework blocks, then everything else.' },
+    { h: 'Review a little every day', b: 'Twenty minutes of review each day beats a three-hour cram the night before.' },
+    { h: 'Choose what not to do', b: 'Like the budget in GapFinder, your hours are limited. Saying no to one thing is how you go deep on another.' },
+    { h: 'Protect your sleep', b: 'Tired studying takes longer and sticks less. Sleep is part of the plan.' },
+  ], quote: 'I don’t have enough time', quoteNote: 'The most common answer to “What’s getting in the way?”', cta: 'Plan your moves in GapFinder', ctaTo: 'gf', source: '' },
+  { id: 'np', kicker: 'Projects', title: 'Starting a nonprofit or passion project', lead: 'Colleges care about impact and commitment, not the word “nonprofit.” A small project that runs for two years can say more than an organization that only exists on paper.', points: [
+    { h: 'Start with a problem you’ve seen', b: 'Something in your school, your neighborhood, or a group you belong to.' },
+    { h: 'Run it small first', b: 'One event, one student you tutor, one app that solves one thing. Then grow it.' },
+    { h: 'Keep a record', b: 'Who you helped, what you learned, what you changed. That becomes your essay.' },
+    { h: 'You don’t need paperwork to start', b: 'Registering an official nonprofit takes forms and an adult. Most student projects don’t need it at first.' },
+  ], quote: 'How appealing is creating your own nonprofit organization?', quoteNote: 'A student, in our survey', cta: 'Talk to a nonprofit founder', ctaTo: 'nguyen', source: '' },
+];
+const lc = t => t.toLowerCase().replace('sat / act', 'SAT/ACT scores');
+const gradeStage = g => (g <= 8 ? 1 : g <= 10 ? 2 : 3);
+const ordinal = g => g + 'th grade';
+
+class Component extends DCLogic {
+  state = (() => {
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem('mbq-gf') || '{}'); } catch (e) {}
+    return {
+      screen: this.props.startScreen ?? 'home',
+      step: saved.step || 0, grade: saved.grade || '8', field: saved.field || FIELDS[0], college: saved.college || '',
+      picks: saved.picks || {}, maxStep: saved.maxStep || 0,
+      mFilter: 'All', dialog: null, msg: '', sent: {}, dialogSent: false, tip: 'look', toast: '',
+    };
+  })();
+
+  componentDidUpdate() {
+    const s = this.state;
+    try { localStorage.setItem('mbq-gf', JSON.stringify({ step: s.step, grade: s.grade, field: s.field, college: s.college, picks: s.picks, maxStep: s.maxStep })); } catch (e) {}
+    if (this._ls !== s.screen || this._lst !== s.step) { if (this._ls !== undefined) window.scrollTo(0, 0); this._ls = s.screen; this._lst = s.step; }
+  }
+
+  icon(paths, size = 18) {
+    return React.createElement('svg', { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.75, strokeLinecap: 'round', strokeLinejoin: 'round', style: { display: 'block', flex: 'none' } },
+      ...paths.map((p, i) => React.createElement(p[0], { key: i, ...p[1] })));
+  }
+  icons() {
+    if (this._icons) return this._icons;
+    const lock = [['rect', { x: 3, y: 11, width: 18, height: 11, rx: 2 }], ['path', { d: 'M7 11V7a5 5 0 0 1 10 0v4' }]];
+    const unlock = [['rect', { x: 3, y: 11, width: 18, height: 11, rx: 2 }], ['path', { d: 'M7 11V7a5 5 0 0 1 9.9-1' }]];
+    const hour = [['path', { d: 'M5 22h14' }], ['path', { d: 'M5 2h14' }], ['path', { d: 'M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22' }], ['path', { d: 'M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2' }]];
+    const coins = [['circle', { cx: 8, cy: 8, r: 6 }], ['path', { d: 'M18.09 10.37A6 6 0 1 1 10.34 18' }], ['path', { d: 'M7 6h1v4' }]];
+    this._icons = {
+      lock: this.icon(lock), lockSm: this.icon(lock, 12), unlock: this.icon(unlock), unlockSm: this.icon(unlock, 12),
+      hourglass: this.icon(hour), hourglassSm: this.icon(hour, 13), coins: this.icon(coins), coinsSm: this.icon(coins, 13),
+      shield: this.icon([['path', { d: 'M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z' }]]),
+      growth: this.icon([['polyline', { points: '22 7 13.5 15.5 8.5 10.5 2 17' }], ['polyline', { points: '16 7 22 7 22 13' }]]),
+      check: this.icon([['path', { d: 'M20 6 9 17l-5-5' }]], 14),
+    };
+    return this._icons;
+  }
+
+  used(n, P = this.state.picks) {
+    return MOVES.filter(m => m.s === n && P[m.id]).reduce((a, m) => ({ t: a.t + m.t, c: a.c + m.c }), { t: 0, c: 0 });
+  }
+  flash(toast) {
+    clearTimeout(this._tt);
+    this.setState({ toast });
+    this._tt = setTimeout(() => this.setState({ toast: '' }), 2800);
+  }
+  toggle(m) {
+    const P = { ...this.state.picks };
+    if (P[m.id]) {
+      const dropped = [];
+      const drop = id => { delete P[id]; MOVES.filter(x => x.needs === id && P[x.id]).forEach(x => { dropped.push(x.title); drop(x.id); }); };
+      drop(m.id);
+      this.setState({ picks: P });
+      if (dropped.length) this.flash('Also dropped “' + dropped.join('”, “') + '”. It needed this gateway.');
+      return;
+    }
+    const strict = this.props.strictBudget ?? true;
+    const u = this.used(m.s), B = STAGES[m.s - 1].budget;
+    if (strict && (u.t + m.t > B.t || u.c + m.c > B.c)) {
+      this.flash(u.t + m.t > B.t ? 'Not enough time left in this stage. Drop a move to make room.' : 'Not enough coins left in this stage. Drop a move to make room.');
+      return;
+    }
+    P[m.id] = true;
+    this.setState({ picks: P });
+  }
+  results() {
+    const s = this.state, P = s.picks;
+    const col = COLLEGES.find(c => c.n === s.college) || COLLEGES[0];
+    const tier = TIERS[col.tier];
+    const pts = {};
+    MOVES.forEach(m => { if (P[m.id]) Object.entries(m.f).forEach(([k, v]) => { pts[k] = (pts[k] || 0) + v; }); });
+    const fac = FACTORS.map(f => ({ ...f, pct: Math.round(Math.min(1, (pts[f.k] || 0) / f.cap) * 100) }));
+    const score = Math.round(fac.reduce((a, f) => a + f.w * f.pct, 0));
+    const gapsAll = fac.filter(f => f.pct < tier.bar).sort((a, b) => b.w * (tier.bar - b.pct) - a.w * (tier.bar - a.pct));
+    const gaps = gapsAll.slice(0, 3);
+    const risks = RISKS.filter(r => !MOVES.some(m => m.risk === r.k && P[m.id]));
+    const closed = MOVES.filter(m => m.needs && !P[m.needs]).map(m => {
+      const g = BYID[m.needs];
+      return { title: m.title, why: 'Needed “' + g.title + '” in ' + STAGES[g.s - 1].short + '.' };
+    });
+    const cur = gradeStage(+s.grade);
+    const gapKeys = gaps.map(g => g.k);
+    const steps = MOVES.filter(m => !P[m.id] && m.s >= cur && !(m.needs && !P[m.needs]) && gapKeys.some(k => m.f[k]))
+      .sort((a, b) => a.s - b.s || gapKeys.findIndex(k => b.f[k]) - gapKeys.findIndex(k => a.f[k]))
+      .slice(0, 4)
+      .map(m => ({ title: m.title, when: m.s === cur ? 'Now' : STAGES[m.s - 1].ages.replace('ages 11–13', 'Middle school').replace('grades', 'Grades'), whenClass: m.s === cur ? 'tag-accent' : 'tag-neutral',
+        helps: FACTORS.filter(f => m.f[f.k] && gapKeys.includes(f.k)).map(f => lc(f.label)).join(' and ') }));
+    const mentor = MENTORS.find(m => m.field === s.field) || MENTORS[MENTORS.length - 1];
+    const on = score >= tier.bar;
+    return { col, tier, fac, score, gaps, risks, closed, steps, mentor, on, cur };
+  }
+  openMentor(m, fromResults) {
+    const s = this.state;
+    let msg = 'Hi ' + m.first + ', I’m in ' + ordinal(s.grade) + ' and I’m curious about ' + (s.field === 'Not sure yet' ? 'a few different fields' : s.field.toLowerCase()) + '. What do you wish you’d known at my age?';
+    if (fromResults) {
+      const r = this.results();
+      if (r.gaps.length) msg = 'Hi ' + m.first + ', I’m in ' + ordinal(s.grade) + ' and aiming for ' + r.col.n + '. GapFinder says my biggest gaps are ' + r.gaps.map(g => lc(g.label)).join(', ') + '. How would you work on that at my age?';
+    }
+    this.setState({ screen: fromResults ? s.screen : 'mentors', dialog: m.id, msg, dialogSent: false });
+  }
+
+  renderVals() {
+    const s = this.state, P = s.picks;
+    const strict = this.props.strictBudget ?? true;
+    const icons = this.icons();
+    const go = (screen, extra) => e => { if (e && e.preventDefault) e.preventDefault(); this.setState({ screen, dialog: null, ...(extra || {}) }); };
+    const setStep = n => this.setState(st => ({ step: n, maxStep: Math.max(st.maxStep, n) }));
+    const col = COLLEGES.find(c => c.n === s.college);
+    const tier = col ? TIERS[col.tier] : null;
+    const cur = gradeStage(+s.grade);
+
+    const stepLabels = ['Setup', 'Middle school', 'Early high school', 'Late high school', 'Results'];
+    const steps = stepLabels.map((label, i) => {
+      const active = i === s.step, done = i < s.step || i <= s.maxStep;
+      return { label, num: i === 4 ? '★' : i === 0 ? '·' : i, onClick: () => setStep(i), disabled: !col || (i > s.maxStep && i !== 0),
+        pillBg: active ? 'var(--color-accent-200)' : 'transparent', dotBg: active ? 'var(--color-accent)' : done ? 'var(--color-accent-2-300)' : 'var(--color-neutral-200)',
+        dotColor: active ? 'var(--color-bg)' : 'var(--color-text)', weight: active ? 700 : 400 };
+    });
+
+    let stageVals = {};
+    if (s.step >= 1 && s.step <= 3) {
+      const st = STAGES[s.step - 1], u = this.used(st.n), B = st.budget;
+      const mk = m => {
+        const locked = !!(m.needs && !P[m.needs]), sel = !!P[m.id];
+        const afford = u.t + m.t <= B.t && u.c + m.c <= B.c;
+        const deps = MOVES.filter(x => x.needs === m.id);
+        const need = m.needs ? BYID[m.needs] : null;
+        return { ...m, locked, open: !locked, sel, isGateway: deps.length > 0, unlocksText: deps.map(d => '“' + d.title + '”').join(', '),
+          tagClass: m.type === 'safety' ? 'tag-accent-2' : 'tag-accent', typeLabel: m.type === 'safety' ? 'Safety move' : 'Growth move',
+          border: sel ? 'var(--color-accent)' : 'transparent', bg: sel ? 'var(--color-accent-100)' : 'var(--color-surface)',
+          shadow: sel ? 'var(--shadow-md)' : 'none', opacity: !sel && !afford && strict ? 0.5 : 1,
+          checkBorder: sel ? 'var(--color-accent)' : 'var(--color-neutral-400)', checkBg: sel ? 'var(--color-accent)' : 'transparent', checkIcon: sel ? icons.check : null,
+          needText: need ? 'Needs “' + need.title + '” in ' + STAGES[need.s - 1].short + '.' : '', needStage: need ? STAGES[need.s - 1].short : '',
+          goNeed: () => need && setStep(need.s), onClick: () => this.toggle(m) };
+      };
+      const cards = MOVES.filter(m => m.s === st.n).map(mk);
+      const meter = (label, icon, used, max) => {
+        const over = used > max;
+        return { label, icon, text: used + ' / ' + max + (over ? ' · over budget' : ''), color: over ? 'var(--color-accent-800)' : 'var(--color-neutral-800)', weight: over ? 700 : 400,
+          dots: Array.from({ length: Math.max(max, used) }, (_, i) => ({ bg: i < used ? (i < max ? 'var(--color-accent)' : 'var(--color-accent-800)') : 'transparent', ring: i < used ? 'transparent' : 'var(--color-neutral-400)' })) };
+      };
+      const tense = st.n < cur ? { tag: 'Looking back', tagClass: 'tag-neutral', text: 'You’re past this stage. Tick what you actually did, so the results are honest.' }
+        : st.n === cur ? { tag: 'You are here', tagClass: 'tag-accent', text: 'These are real choices you can still make this year.' }
+        : { tag: 'Coming up', tagClass: 'tag-accent-2', text: 'Plan what you’d commit to when you get here.' };
+      stageVals = {
+        stage: { ...st, hasLockNote: cards.some(c => c.locked) }, tense,
+        groups: [
+          { title: 'Safety moves', sub: 'Protect you from what could go wrong', cards: cards.filter(c => c.type === 'safety') },
+          { title: 'Growth moves', sub: 'Build the edge admissions weighs', cards: cards.filter(c => c.type === 'growth') },
+        ],
+        meters: [meter('Time', icons.hourglass, u.t, B.t), meter('Coins', icons.coins, u.c, B.c)],
+        nextLabel: s.step === 3 ? 'See my results' : 'Next: ' + STAGES[s.step].name,
+      };
+    }
+
+    let r = {};
+    if (s.step === 4 && col) {
+      const R = this.results();
+      const gl = R.gaps.map(g => lc(g.label));
+      r = {
+        collegeName: R.col.n, score: R.score, bar: R.tier.bar, scoreW: R.score + '%', barW: R.tier.bar + '%', tierLabelLower: R.tier.label.toLowerCase(),
+        scoreColor: R.on ? 'var(--color-accent-2-700)' : 'var(--color-accent-700)',
+        headline: R.on ? (R.gaps.length ? 'On track for ' + R.col.n + ', with gaps to watch' : 'Your plan clears the bar for ' + R.col.n) : 'A few gaps to close for ' + R.col.n,
+        summary: R.on ? 'Your plan clears the bar for ' + R.tier.label.toLowerCase() + ' colleges.' + (gl.length ? ' Your weakest areas are ' + gl.join(', ') + '.' : '') + ' A strong plan makes a strong application possible. It never guarantees admission.'
+          : 'Your plan scores ' + R.score + ', below the ' + R.tier.bar + ' bar for ' + R.tier.label.toLowerCase() + ' colleges. The biggest shortfalls are in ' + gl.join(', ') + '. Most are fixable from where you are now.',
+        factors: R.fac.map(f => ({ label: f.label, pctText: f.pct + '%', w: Math.max(f.pct, 2) + '%', color: f.pct < R.tier.bar ? 'var(--color-accent)' : 'var(--color-accent-2)' })),
+        gaps: R.gaps.map((g, i) => ({ rank: i + 1, label: g.label, fix: g.fix })), noGaps: R.gaps.length === 0,
+        risks: R.risks, noRisks: R.risks.length === 0, closed: R.closed, noClosed: R.closed.length === 0,
+        steps: R.steps, noSteps: R.steps.length === 0, gradeLabel: ordinal(s.grade),
+        mentor: R.mentor,
+        mentorWhy: R.mentor.first + ' works in ' + (s.field === 'Not sure yet' ? 'helping students find a direction' : s.field.toLowerCase()) + ' and can tell you which of these gaps matter most in that field.',
+        askMentor: () => this.openMentor(R.mentor, true),
+      };
+    }
+
+    const filterList = ['All', ...FIELDS];
+    const dm = MENTORS.find(m => m.id === s.dialog);
+    const tip = TIPS.find(t => t.id === s.tip);
+
+    return {
+      icons, isHome: s.screen === 'home', isGF: s.screen === 'gf', isMentors: s.screen === 'mentors', isTips: s.screen === 'tips',
+      navGF: s.screen === 'gf' ? 'page' : undefined, navMentors: s.screen === 'mentors' ? 'page' : undefined, navTips: s.screen === 'tips' ? 'page' : undefined,
+      goHome: go('home'), goGF: go('gf'), goMentors: go('mentors'), goTips: go('tips'),
+      steps, isSetup: s.step === 0, isStage: s.step >= 1 && s.step <= 3, isResults: s.step === 4,
+      grade: s.grade, field: s.field, college: s.college,
+      gradeOptions: [6, 7, 8, 9, 10, 11, 12].map(g => ({ v: String(g), label: ordinal(g) })), fieldOptions: FIELDS, collegeOptions: COLLEGES,
+      onGrade: e => this.setState({ grade: e.target.value }), onField: e => this.setState({ field: e.target.value }), onCollege: e => this.setState({ college: e.target.value }),
+      hasCollege: !!tier, tierLabel: tier ? tier.label : '', tierBar: tier ? tier.bar : '', tierNote: tier ? tier.note : '',
+      cantStart: !col, startLabel: s.maxStep > 0 ? 'Continue my plan' : 'Start with middle school',
+      startGF: () => setStep(s.maxStep > 0 && s.maxStep < 4 ? s.maxStep : 1),
+      ...stageVals,
+      prevStep: () => setStep(s.step - 1), nextStep: () => setStep(s.step + 1),
+      r, editPlan: () => setStep(cur), resetGF: () => this.setState({ step: 0, maxStep: 0, picks: {} }),
+      filters: filterList.map(f => {
+        const a = s.mFilter === f;
+        return { label: f, onClick: () => this.setState({ mFilter: f }), bg: a ? 'var(--color-text)' : 'transparent', color: a ? 'var(--color-bg)' : 'var(--color-text)', border: a ? 'var(--color-text)' : 'var(--color-divider)' };
+      }),
+      mentorCards: MENTORS.filter(m => s.mFilter === 'All' || m.field === s.mFilter).map((m, i) => ({ ...m, avatarBg: i % 2 ? 'var(--color-accent)' : 'var(--color-accent-2)',
+        sent: !!s.sent[m.id], btnLabel: s.sent[m.id] ? 'Request sent' : 'Ask for a chat', btnClass: s.sent[m.id] ? 'btn-secondary' : 'btn-primary', onAsk: () => this.openMentor(m, false) })),
+      dialogOpen: !!dm, dialogForm: !!dm && !s.dialogSent, dialogSent: !!dm && s.dialogSent, dm: dm || {}, msg: s.msg,
+      onMsg: e => this.setState({ msg: e.target.value }), cantSend: !s.msg.trim(),
+      closeDialog: () => this.setState({ dialog: null }), stop: e => e.stopPropagation(),
+      sendRequest: () => this.setState(st => ({ sent: { ...st.sent, [st.dialog]: true }, dialogSent: true })),
+      tipNav: TIPS.map((t, i) => {
+        const a = t.id === s.tip;
+        return { title: t.title, num: i + 1, onClick: () => this.setState({ tip: t.id }), bg: a ? 'var(--color-surface)' : 'transparent', color: 'var(--color-text)',
+          numBg: a ? 'var(--color-accent)' : 'var(--color-neutral-200)', numColor: a ? 'var(--color-bg)' : 'var(--color-text)' };
+      }),
+      tip: { ...tip, points: tip.points.map((p, i) => ({ ...p, n: i + 1 })),
+        onCta: tip.ctaTo === 'gf' ? go('gf') : () => this.openMentor(MENTORS.find(m => m.id === tip.ctaTo), false) },
+      hasToast: !!s.toast, toast: s.toast,
+    };
+  }
+}
+</script>
+</body>
+</html>

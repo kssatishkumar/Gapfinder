@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="styles.css">
+<style>
+body{margin:0;background:var(--color-bg)}
+a{color:var(--color-accent-700)}
+a:hover{color:var(--color-accent-800)}
+</style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-direction:column;font-family:var(--font-body);color:var(--color-text);background:var(--color-bg)">
+
+<header style="max-width:1168px;width:100%;margin:0 auto;padding:0 20px;box-sizing:border-box">
+  <nav class="nav" style="padding:18px 0">
+    <a href="#" onClick="{{ goIntro }}" class="nav-brand" style="display:flex;align-items:center;gap:10px;font-size:20px;text-decoration:none">
+      <span style="width:28px;height:28px;border-radius:50%;background:var(--color-accent);display:block;box-shadow:10px 0 0 -4px var(--color-accent-2)"></span>
+      <span style="margin-left:6px">My Big Quest</span>
+    </a>
+  </nav>
+</header>
+
+<main style="max-width:1168px;width:100%;margin:0 auto;padding:4px 20px 56px;box-sizing:border-box;display:flex;flex-direction:column;gap:28px">
+
+  <sc-if value="{{ gfIntro }}" hint-placeholder-val="{{ true }}">
+  <section style="display:flex;flex-direction:column;gap:20px;max-width:600px;padding-top:20px">
+    <h1 style="margin:0;font-size:clamp(40px,7vw,58px)">GapFinder</h1>
+    <p style="margin:0;font-size:18px;color:var(--color-neutral-800);text-wrap:pretty">A few quick questions about middle school and high school. Then you’ll see what’s missing from your plan to get ready for college.</p>
+    <ol style="list-style:none;margin:4px 0 0;padding:0;display:flex;flex-direction:column;gap:10px">
+      <li style="display:flex;gap:14px;align-items:center;padding:14px 18px;border-radius:22px;background:var(--color-surface)"><span style="flex:none;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--color-accent);color:var(--color-bg);font-weight:700">1</span><span style="font-size:16px">Answer quick questions about middle school, early high school and late high school.</span></li>
+      <li style="display:flex;gap:14px;align-items:center;padding:14px 18px;border-radius:22px;background:var(--color-surface)"><span style="flex:none;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--color-accent-2);color:var(--color-bg);font-weight:700">2</span><span style="font-size:16px">See which of the 9 things students say help most you’re missing, and how to start each one.</span></li>
+    </ol>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="tag tag-neutral">14 questions</span><span class="tag tag-neutral">About 2 minutes</span><span class="tag tag-neutral">Saved on this device</span></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px">
+      <button class="btn btn-primary" onClick="{{ startGF }}" style="font-size:17px;padding:14px 28px">{{ startLabel }}</button>
+      <sc-if value="{{ hasProgress }}" hint-placeholder-val="{{ false }}"><button class="btn btn-ghost" onClick="{{ resetGF }}" style="font-size:16px">Start over</button></sc-if>
+    </div>
+  </section>
+  </sc-if>
+
+  <sc-if value="{{ aQ }}" hint-placeholder-val="{{ false }}">
+  <section style="display:flex;flex-direction:column;gap:20px;max-width:640px;width:100%">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button class="btn btn-ghost" onClick="{{ prev }}" style="font-size:15px;padding:8px 14px 8px 8px;display:flex;align-items:center;gap:6px">{{ icons.back }}Back</button>
+      <span style="margin-left:auto;font-size:13px;color:var(--color-neutral-800)">{{ cv.progressText }}</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 5fr 6fr 4fr;gap:6px">
+      <sc-for list="{{ cv.segs }}" as="sg" hint-placeholder-count="4"><div style="height:8px;border-radius:999px;background:var(--color-neutral-200);overflow:hidden"><div style="width:{{ sg.w }};height:100%;border-radius:999px;background:var(--color-accent)"></div></div></sc-for>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <sc-if value="{{ cv.showTense }}" hint-placeholder-val="{{ false }}"><span class="tag {{ cv.tenseClass }}" style="align-self:flex-start">{{ cv.tenseTag }}</span></sc-if>
+      <h2 style="margin:0;font-size:clamp(26px,4.6vw,34px);line-height:1.15;text-wrap:balance">{{ cv.title }}</h2>
+      <sc-if value="{{ cv.hasHelp }}" hint-placeholder-val="{{ false }}"><p style="margin:0;font-size:15px;color:var(--color-neutral-800);text-wrap:pretty">{{ cv.help }}</p></sc-if>
+      <sc-if value="{{ cv.hasQOpens }}" hint-placeholder-val="{{ false }}"><p style="margin:0;display:flex;gap:6px;align-items:center;font-size:14px;font-weight:600;color:var(--color-accent-700)">{{ icons.unlockSm }}Opens up later: {{ cv.qOpensText }}</p></sc-if>
+    </div>
+    <sc-if value="{{ cv.isLocked }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:12px;padding:20px;border-radius:26px;border:2px dashed var(--color-neutral-400)">
+        <span class="tag tag-neutral" style="align-self:flex-start;gap:5px;background:var(--color-neutral-200)">{{ icons.lockSm }}Closed</span>
+        <p style="margin:0;font-size:15px">{{ cv.lockedText }}</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-secondary" onClick="{{ cv.lockFix }}" style="font-size:15px;padding:11px 20px">Change that answer</button><button class="btn btn-primary" onClick="{{ cv.lockSkip }}" style="font-size:15px;padding:11px 22px">Continue</button></div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ cv.hasOptions }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <sc-for list="{{ cv.options }}" as="o" hint-placeholder-count="3">
+          <sc-if value="{{ o.open }}" hint-placeholder-val="{{ true }}">
+            <button onClick="{{ o.onClick }}" aria-pressed="{{ o.sel }}" style="display:flex;gap:14px;align-items:flex-start;width:100%;box-sizing:border-box;text-align:left;font:inherit;color:inherit;cursor:pointer;min-height:60px;padding:16px 18px;border-radius:24px;border:2px solid {{ o.border }};background:{{ o.bg }}">
+              <span style="flex:none;width:24px;height:24px;border-radius:{{ o.checkRadius }};display:grid;place-items:center;border:2px solid {{ o.checkBorder }};background:{{ o.checkBg }};color:var(--color-bg);box-sizing:border-box">{{ o.checkIcon }}</span>
+              <span style="display:flex;flex-direction:column;gap:6px;min-width:0">
+                <span style="font-size:16px;font-weight:600;line-height:1.35">{{ o.label }}</span>
+                <sc-if value="{{ o.hasOpens }}" hint-placeholder-val="{{ false }}"><span style="display:flex;gap:6px;align-items:flex-start;font-size:13px;font-weight:600;color:var(--color-accent-700)"><span style="margin-top:2px">{{ icons.unlockSm }}</span>Opens up later: {{ o.opensText }}</span></sc-if>
+              </span>
+            </button>
+          </sc-if>
+          <sc-if value="{{ o.locked }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;gap:14px;align-items:flex-start;padding:16px 18px;border-radius:24px;border:2px dashed var(--color-neutral-400);color:var(--color-neutral-700)">
+              <span style="flex:none;width:24px;height:24px;display:grid;place-items:center">{{ icons.lock }}</span>
+              <span style="display:flex;flex-direction:column;gap:4px;min-width:0">
+                <span style="font-size:16px;font-weight:600;line-height:1.35">{{ o.label }}</span>
+                <span style="font-size:13px">{{ o.needText }}</span>
+                <button class="btn btn-ghost" onClick="{{ o.goNeed }}" style="align-self:flex-start;font-size:13px;padding:6px 12px;margin-left:-12px">Change that answer</button>
+              </span>
+            </div>
+          </sc-if>
+        </sc-for>
+      </div>
+    </sc-if>
+    <sc-if value="{{ cv.isMulti }}" hint-placeholder-val="{{ false }}">
+      <div style="position:sticky;bottom:0;padding:12px 0 16px;background:var(--color-bg);display:flex;align-items:center;gap:14px">
+        <button class="btn btn-primary" onClick="{{ cv.onContinue }}" disabled="{{ cv.cantContinue }}" style="font-size:16px;padding:13px 28px">Continue</button>
+        <span style="font-size:13px;color:var(--color-neutral-800)">{{ cv.multiNote }}</span>
+      </div>
+    </sc-if>
+  </section>
+  </sc-if>
+
+  <sc-if value="{{ aRecap }}" hint-placeholder-val="{{ false }}">
+  <section style="display:flex;flex-direction:column;gap:22px;max-width:640px;width:100%">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button class="btn btn-ghost" onClick="{{ prev }}" style="font-size:15px;padding:8px 14px 8px 8px;display:flex;align-items:center;gap:6px">{{ icons.back }}Back</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 5fr 6fr 4fr;gap:6px">
+      <sc-for list="{{ cv.segs }}" as="sg" hint-placeholder-count="4"><div style="height:8px;border-radius:999px;background:var(--color-neutral-200);overflow:hidden"><div style="width:{{ sg.w }};height:100%;border-radius:999px;background:var(--color-accent)"></div></div></sc-for>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <span class="card-kicker" style="font-size:12px;color:var(--color-accent-700)">{{ cv.recapKicker }}</span>
+      <h2 style="margin:0;font-size:clamp(28px,4.8vw,38px)">Here’s what carries forward</h2>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;align-items:center;gap:8px;color:var(--color-accent-700)">{{ icons.unlock }}<h4 style="margin:0;color:var(--color-text)">Opened for later</h4></div>
+      <sc-if value="{{ cv.noOpened }}" hint-placeholder-val="{{ false }}"><p style="margin:0;font-size:14px;color:var(--color-neutral-800)">Nothing yet. Answers marked “Opens up later” are what make the bigger goals in high school possible.</p></sc-if>
+      <sc-for list="{{ cv.opened }}" as="op" hint-placeholder-count="1">
+        <div style="display:flex;flex-direction:column;gap:2px;padding:14px 16px;border-radius:20px;background:var(--color-accent-100)"><span style="font-weight:600;font-size:15px">{{ op.title }}</span><span style="font-size:13px;color:var(--color-accent-900)">{{ op.when }}</span></div>
+      </sc-for>
+    </div>
+    <sc-if value="{{ cv.hasStill }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:center;gap:8px;color:var(--color-neutral-700)">{{ icons.lock }}<h4 style="margin:0;color:var(--color-text)">Still locked</h4></div>
+        <sc-for list="{{ cv.still }}" as="op" hint-placeholder-count="2">
+          <div style="display:flex;flex-direction:column;gap:2px;padding:12px 16px;border-radius:20px;border:2px dashed var(--color-neutral-300)"><span style="font-weight:600;font-size:15px">{{ op.title }}</span><span style="font-size:13px;color:var(--color-neutral-800)">{{ op.need }}</span></div>
+        </sc-for>
+      </div>
+    </sc-if>
+    <button class="btn btn-primary" onClick="{{ cv.onNext }}" style="align-self:flex-start;font-size:16px;padding:13px 26px">{{ cv.nextLabel }}</button>
+  </section>
+  </sc-if>
+
+  <sc-if value="{{ bChat }}" hint-placeholder-val="{{ false }}">
+  <section style="display:flex;flex-direction:column;max-width:680px;width:100%">
+    <div style="position:sticky;top:0;z-index:4;background:var(--color-bg);padding:10px 0;box-shadow:0 1px 0 var(--color-divider);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span style="font-family:var(--font-heading);font-size:18px">GapFinder</span>
+      <span class="tag {{ cv.tenseClass }}">{{ cv.tenseTag }}</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;padding:18px 0 20px">
+      <sc-for list="{{ thread }}" as="mg" hint-placeholder-count="3">
+        <sc-if value="{{ mg.guide }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;gap:10px;align-items:flex-end;max-width:90%;margin-top:{{ mg.gap }}">
+            <sc-if value="{{ mg.avatar }}" hint-placeholder-val="{{ true }}"><span style="flex:none;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--color-accent-2);color:var(--color-bg);font-family:var(--font-heading);font-size:15px">Q</span></sc-if>
+            <sc-if value="{{ mg.noAvatar }}" hint-placeholder-val="{{ false }}"><span style="flex:none;width:32px"></span></sc-if>
+            <div style="padding:12px 16px;border-radius:22px 22px 22px 6px;background:var(--color-surface);display:flex;flex-direction:column;gap:6px;min-width:0">
+              <span style="font-size:16px;line-height:1.4;text-wrap:pretty">{{ mg.text }}</span>
+              <sc-if value="{{ mg.hasSub }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;color:var(--color-neutral-800);text-wrap:pretty">{{ mg.sub }}</span></sc-if>
+              <sc-if value="{{ mg.hasSub2 }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;font-weight:600;color:var(--color-accent-700);text-wrap:pretty">{{ mg.sub2 }}</span></sc-if>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ mg.me }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ mg.onClick }}" title="Tap to change this answer" style="align-self:flex-end;max-width:80%;text-align:right;font:inherit;font-size:15px;line-height:1.4;padding:10px 16px;border-radius:22px 22px 6px 22px;border:none;cursor:pointer;background:var(--color-accent-200);color:var(--color-text);margin-top:4px" style-hover="background:var(--color-accent-300)">{{ mg.text }}</button>
+        </sc-if>
+      </sc-for>
+    </div>
+    <div style="position:sticky;bottom:0;z-index:4;padding:14px 0 18px;background:var(--color-bg);box-shadow:0 -1px 0 var(--color-divider);display:flex;flex-direction:column;gap:12px">
+      <sc-if value="{{ cv.isLocked }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-secondary" onClick="{{ cv.lockFix }}" style="font-size:15px;padding:11px 20px">Change my earlier answer</button><button class="btn btn-primary" onClick="{{ cv.lockSkip }}" style="font-size:15px;padding:11px 22px">Continue</button></div>
+      </sc-if>
+      <sc-if value="{{ cv.hasOptions }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <sc-for list="{{ cv.options }}" as="o" hint-placeholder-count="3">
+            <sc-if value="{{ o.open }}" hint-placeholder-val="{{ true }}">
+              <button onClick="{{ o.onClick }}" aria-pressed="{{ o.sel }}" style="display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:9px 16px;border-radius:999px;font:inherit;font-size:15px;text-align:left;cursor:pointer;border:2px solid {{ o.pillBorder }};background:{{ o.pillBg }};color:var(--color-text)">
+                <span>{{ o.label }}</span>
+                <sc-if value="{{ o.hasOpens }}" hint-placeholder-val="{{ false }}"><span style="color:var(--color-accent-700)">{{ icons.unlockSm }}</span></sc-if>
+              </button>
+            </sc-if>
+            <sc-if value="{{ o.locked }}" hint-placeholder-val="{{ false }}">
+              <span style="display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:9px 16px;border-radius:999px;font-size:15px;border:2px dashed var(--color-neutral-400);color:var(--color-neutral-700);box-sizing:border-box">{{ icons.lockSm }}{{ o.label }}</span>
+            </sc-if>
+          </sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{ cv.hasOpensLegend }}" hint-placeholder-val="{{ false }}"><span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--color-accent-700)">{{ icons.unlockSm }}Opens up something in a later stage</span></sc-if>
+      <sc-if value="{{ cv.hasLockNotes }}" hint-placeholder-val="{{ false }}"><span style="display:flex;align-items:flex-start;gap:6px;font-size:12px;color:var(--color-neutral-800)"><span style="margin-top:1px">{{ icons.lockSm }}</span>{{ cv.lockNotes }}</span></sc-if>
+      <sc-if value="{{ cv.isMulti }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:12px"><button class="btn btn-primary" onClick="{{ cv.onContinue }}" disabled="{{ cv.cantContinue }}" style="font-size:15px;padding:11px 24px">Send</button><span style="font-size:13px;color:var(--color-neutral-800)">{{ cv.multiNote }}</span></div>
+      </sc-if>
+      <sc-if value="{{ cv.isRecap }}" hint-placeholder-val="{{ false }}"><button class="btn btn-primary" onClick="{{ cv.onNext }}" style="align-self:flex-start;font-size:15px;padding:11px 24px">{{ cv.nextLabel }}</button></sc-if>
+    </div>
+  </section>
+  </sc-if>
+
+  <sc-if value="{{ gfResults }}" hint-placeholder-val="{{ false }}">
+  <section style="display:flex;flex-direction:column;gap:14px;max-width:720px;padding-top:8px">
+    <span class="card-kicker" style="font-size:12px;color:var(--color-accent-700)">Your GapFinder results</span>
+    <h1 style="margin:0;font-size:clamp(34px,5.4vw,50px);text-wrap:balance">{{ r.headline }}</h1>
+    <p style="margin:0;font-size:17px;color:var(--color-neutral-800);text-wrap:pretty">{{ r.summary }}</p>
+  </section>
+
+  <sc-if value="{{ r.hasGaps }}" hint-placeholder-val="{{ true }}">
+  <section style="display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <h2 style="margin:0">{{ r.gapsTitle }}</h2>
+      <p style="margin:0;font-size:14px;color:var(--color-neutral-800)">{{ r.gapsNote }}</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr));gap:16px">
+      <sc-for list="{{ r.top }}" as="g" hint-placeholder-count="3">
+        <div class="card" style="padding:22px;gap:12px;background:var(--color-accent-100)">
+          <div style="display:flex;align-items:center;gap:12px"><span style="width:32px;height:32px;flex:none;border-radius:50%;display:grid;place-items:center;background:var(--color-accent);color:var(--color-bg);font-weight:700;font-size:15px">{{ g.rank }}</span><span class="card-title" style="font-size:20px">{{ g.label }}</span></div>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <span style="font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--color-accent-800)">First step</span>
+            <p style="margin:0;font-size:15px;line-height:1.45;text-wrap:pretty">{{ g.step }}</p>
+          </div>
+          <p style="margin:auto 0 0;padding-top:12px;border-top:1.5px solid var(--color-accent-200);font-size:13px;color:var(--color-accent-900);text-wrap:pretty">{{ g.stat }}</p>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+  </sc-if>
+
+  <section style="display:flex;flex-direction:column;gap:14px;max-width:720px">
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <h3 style="margin:0">All 9 areas</h3>
+      <p style="margin:0;font-size:14px;color:var(--color-neutral-800)">The things students in our survey said help them get ready for college.</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <sc-for list="{{ r.areas }}" as="a" hint-placeholder-count="9">
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 18px;border-radius:20px;background:var(--color-surface)">
+          <span style="font-size:15px;font-weight:600">{{ a.label }}</span>
+          <span class="tag {{ a.cls }}" style="margin-left:auto">{{ a.status }}</span>
+        </div>
+      </sc-for>
+    </div>
+    <p style="margin:0;font-size:13px;color:var(--color-neutral-800)">Doing it: you do this now or already did. Planned: you said you will. Gap: not in your plan yet.</p>
+  </section>
+
+  <section style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+    <button class="btn btn-secondary" onClick="{{ editPlan }}" style="font-size:15px;padding:11px 20px">Change my answers</button>
+    <button class="btn btn-ghost" onClick="{{ resetGF }}" style="font-size:15px">Start over</button>
+    <p style="margin:0 0 0 auto;font-size:12px;color:var(--color-neutral-700);max-width:420px">The 9 areas and numbers come from a survey of 28 students in grades 7–9.</p>
+  </section>
+  </sc-if>
+</main>
+
+<sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+  <div role="status" style="position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:30;padding:12px 20px;border-radius:999px;background:var(--color-neutral-900);color:var(--color-bg);font-size:14px;box-shadow:var(--shadow-lg);max-width:calc(100% - 48px)">{{ toast }}</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;gfVersion&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;A&quot;,&quot;B&quot;],&quot;default&quot;:&quot;A&quot;,&quot;tsType&quot;:&quot;'A'|'B'&quot;,&quot;section&quot;:&quot;GapFinder&quot;}}">
+const STAGES = [
+  { n: 1, name: 'Middle school', short: 'middle school', range: 'Grades 6–8' },
+  { n: 2, name: 'Early high school', short: 'early high school', range: 'Grades 9–10' },
+  { n: 3, name: 'Late high school', short: 'late high school', range: 'Grades 11–12' },
+];
+const AREAS = [
+  { k: 'projects', label: 'Projects and research', step: 'Pick one question you’re curious about and spend an hour a week digging into it.', stat: '16 of 28 students we surveyed work on a project outside class. Doing research is what the most students want to start (15).' },
+  { k: 'lead', label: 'Leadership', step: 'In a club or team you’re already in, offer to help run one event or project.', stat: '13 of 28 students we surveyed have a leadership role. 14 more want one.' },
+  { k: 'routine', label: 'A study routine', step: 'Pick a set time each day for homework, and review for 15 minutes even when nothing is due.', stat: '20 of 28 students we surveyed keep a study routine. 11 more want to start one.' },
+  { k: 'colleges', label: 'Exploring colleges', step: 'Look up three colleges that are strong in a subject you like, and what they look for.', stat: '20 of 28 students we surveyed are already thinking about which colleges interest them.' },
+  { k: 'comps', label: 'Competitions', step: 'Find one competition in a subject you like (math, science fair, debate, robotics) and sign up.', stat: '17 of 28 students we surveyed enter competitions. 8 more want to start.' },
+  { k: 'tutor', label: 'Helping or tutoring others', step: 'Offer to help a classmate or a younger student with a subject you’re good at.', stat: '10 of 28 students we surveyed help or tutor others. 7 more want to start.' },
+  { k: 'help', label: 'Asking for help', step: 'Next time something doesn’t make sense, ask your teacher after class or go to office hours.', stat: '18 of 28 students we surveyed ask a teacher, an adult or AI when work gets hard.' },
+  { k: 'advanced', label: 'Advanced classes', step: 'Ask your counselor which honors or advanced classes you could take next year.', stat: '22 of 28 students we surveyed take advanced classes or work above grade level.' },
+  { k: 'clubs', label: 'Clubs and sports', step: 'Join one club or team this term and go every week.', stat: '25 of 28 students we surveyed are in a club, and 24 play a sport.' },
+];
+const MV = (id, s, title, area, needs) => ({ id, s, title, area, needs });
+const MOVES = [
+  MV('routine1', 1, 'Keep a regular study routine', 'routine'),
+  MV('help1', 1, 'Ask for help when work gets hard', 'help'),
+  MV('sport', 1, 'Play a sport', 'clubs'),
+  MV('club', 1, 'Join a club', 'clubs'),
+  MV('compete', 1, 'Enter academic competitions', 'comps'),
+  MV('tutor1', 1, 'Volunteer or tutor others', 'tutor'),
+  MV('adv1', 1, 'Take advanced classes', 'advanced'),
+  MV('firstap', 2, 'Take honors or AP classes', 'advanced'),
+  MV('project', 2, 'Start a long-term project or research', 'projects'),
+  MV('comp3', 2, 'Enter competitions and aim to place', 'comps', 'compete'),
+  MV('tutor2', 2, 'Help or tutor other students', 'tutor'),
+  MV('clubs2', 2, 'Keep up a sport or club', 'clubs'),
+  MV('lead2', 2, 'Take a role like officer, captain or organizer', 'lead'),
+  MV('col2', 2, 'Look into colleges and programs', 'colleges'),
+  MV('routine2', 2, 'Keep a study routine as classes get harder', 'routine'),
+  MV('heavyap', 3, 'A heavy AP course load', 'advanced', 'firstap'),
+  MV('win', 3, 'Win or place in a major competition', 'comps', 'comp3'),
+  MV('varsity', 3, 'Make varsity or team captain', 'lead', 'sport'),
+  MV('publish', 3, 'Publish or showcase your project', 'projects', 'project'),
+  MV('leader', 3, 'Lead a club, team or nonprofit', 'lead'),
+  MV('summer', 3, 'Research or a summer program at a college', 'projects'),
+  MV('col3', 3, 'Visit or research the colleges on your list', 'colleges'),
+  MV('help3', 3, 'Get help as soon as a class gets hard', 'help'),
+];
+const BYID = Object.fromEntries(MOVES.map(m => [m.id, m]));
+const SHORT = { sport: 'a sport', compete: 'academic competitions', comp3: 'entering competitions', project: 'a long-term project', firstap: 'honors or AP classes' };
+const O = (id, label, moves) => ({ id, label, moves: moves || [] });
+const QUESTIONS = [
+  { id: 'grade', s: 0, type: 'single', t: { now: 'What grade are you in?' }, options: [6, 7, 8, 9, 10, 11, 12].map(g => O(String(g), g + 'th grade')) },
+  { id: 'routine', s: 1, type: 'yn', move: 'routine1', t: { now: 'Do you have a regular study or homework routine?', past: 'In middle school, did you have a regular study or homework routine?' } },
+  { id: 'help', s: 1, type: 'single', t: { now: 'When schoolwork gets hard, what do you usually do?', past: 'In middle school, when work got hard, what did you usually do?' }, options: [O('ask', 'Ask a teacher or another adult', ['help1']), O('ai', 'Look it up or ask AI to explain it', ['help1']), O('alone', 'Keep trying on my own')] },
+  { id: 'main', s: 1, type: 'multi', max: 2, t: { now: 'What do you do outside class?', past: 'In middle school, what did you do outside class?' }, help: 'Pick up to two you stick with. Some of these open up bigger things later.', options: [
+    O('sport', 'A sport', ['sport']), O('club', 'A club', ['club']), O('compete', 'Academic competitions (math, science fair, debate, robotics)', ['compete']), O('tutor', 'Volunteering or tutoring', ['tutor1']), O('none', 'Nothing regular yet')] },
+  { id: 'adv', s: 1, type: 'yn', move: 'adv1', t: { now: 'Are you in advanced classes, or working above grade level?', past: 'In middle school, were you in advanced classes or working above grade level?' } },
+  { id: 'ap', s: 2, type: 'yn', move: 'firstap', t: { will: 'Will you take honors or AP classes in 9th and 10th grade?', past: 'Did you take honors or AP classes in 9th and 10th grade?' } },
+  { id: 'build', s: 2, type: 'multi', max: 2, t: { will: 'Outside class, what will you do in 9th and 10th grade?', past: 'Outside class, what did you do in 9th and 10th grade?' }, help: 'Pick up to two.', options: [
+    O('project', 'Start a long-term project or research', ['project']), O('comp3', 'Enter competitions and aim to place', ['comp3']), O('tutor2', 'Help or tutor other students', ['tutor2']), O('clubs2', 'Keep up a sport or club', ['clubs2']), O('none', 'None of these')] },
+  { id: 'lead', s: 2, type: 'yn', move: 'lead2', t: { will: 'Will you take a role like club officer, team captain or event organizer?', past: 'Did you take a role like club officer, team captain or event organizer?' } },
+  { id: 'colleges', s: 2, type: 'yn', move: 'col2', t: { will: 'Will you start looking into colleges or programs that interest you?', past: 'Did you start looking into colleges or programs that interest you?' } },
+  { id: 'routine2', s: 2, type: 'yn', move: 'routine2', t: { will: 'Will you keep a study routine as classes get harder?', past: 'Did you keep a study routine as classes got harder?' } },
+  { id: 'heavyap', s: 3, type: 'yn', move: 'heavyap', t: { will: 'Will you take a heavy AP course load?' } },
+  { id: 'big', s: 3, type: 'multi', max: 2, t: { will: 'What will you aim for in 11th and 12th grade?' }, help: 'Pick up to two. Some need groundwork from earlier stages.', options: [
+    O('win', 'Win or place in a major competition', ['win']), O('varsity', 'Make varsity or team captain', ['varsity']), O('publish', 'Publish or showcase my project', ['publish']), O('leader', 'Lead a club, team or nonprofit', ['leader']), O('summer', 'Research or a summer program at a college', ['summer']), O('none', 'None of these')] },
+  { id: 'col3', s: 3, type: 'yn', move: 'col3', t: { will: 'Will you visit or research the colleges on your list?' } },
+  { id: 'help3', s: 3, type: 'yn', move: 'help3', t: { will: 'Will you get help, like office hours or a tutor, as soon as a class gets hard?' } },
+];
+const gradeStage = g => (g <= 8 ? 1 : g <= 10 ? 2 : 3);
+const YN = {
+  past: [{ id: 'y', label: 'Yes' }, { id: 'n', label: 'No' }],
+  now: [{ id: 'y', label: 'Yes' }, { id: 'soon', label: 'Not yet, but I will' }, { id: 'n', label: 'No' }],
+  will: [{ id: 'y', label: 'Yes, I plan to' }, { id: 'n', label: 'Probably not' }],
+};
+const FLOW = (() => {
+  const out = [];
+  QUESTIONS.forEach((q, i) => { out.push({ kind: 'q', q }); const nx = QUESTIONS[i + 1]; if (q.s >= 1 && q.s < 3 && (!nx || nx.s !== q.s)) out.push({ kind: 'recap', s: q.s }); });
+  out.push({ kind: 'results' });
+  return out;
+})();
+const QIDX = {}; FLOW.forEach((it, i) => { if (it.kind === 'q') QIDX[it.q.id] = i; });
+const deps = id => MOVES.filter(x => x.needs === id);
+const needText = id => 'Needs ' + SHORT[id] + ' in ' + STAGES[BYID[id].s - 1].short + '.';
+const qFor = id => QUESTIONS.find(q => q.move === id || (q.options || []).some(o => o.moves.includes(id)));
+const opensOf = moves => MOVES.filter(x => moves.includes(x.needs)).map(x => x.title);
+const needOf = moves => { const m = moves.map(id => BYID[id]).find(x => x.needs); return m ? m.needs : null; };
+const CV0 = { isQ: false, isRecap: false, title: '', help: '', hasHelp: false, showTense: false, tenseTag: '', tenseClass: 'tag-neutral', progressText: '', segs: [], hasQOpens: false, qOpensText: '', isLocked: false, lockedText: '', hasOptions: false, options: [], isMulti: false, cantContinue: true, multiNote: '', hasLockNotes: false, lockNotes: '', hasOpensLegend: false, recapKicker: '', opened: [], still: [], noOpened: false, hasStill: false, nextLabel: '' };
+
+class Component extends DCLogic {
+  state = (() => {
+    let sv = {};
+    try { sv = JSON.parse(localStorage.getItem('mbq-gf4') || '{}'); } catch (e) {}
+    return { ver: this.props.gfVersion ?? 'A', started: !!sv.started, pos: Math.min(sv.pos || 0, FLOW.length - 1), answers: sv.answers || {}, toast: '' };
+  })();
+
+  componentDidUpdate(prevProps) {
+    const s = this.state;
+    if (prevProps.gfVersion !== this.props.gfVersion && this.props.gfVersion) this.setState(st => ({ ver: this.props.gfVersion, pos: this.props.gfVersion === 'B' && FLOW[st.pos].kind === 'recap' ? st.pos + 1 : st.pos }));
+    try { localStorage.setItem('mbq-gf4', JSON.stringify({ started: s.started, pos: s.pos, answers: s.answers })); } catch (e) {}
+    const key = s.started + '|' + s.pos + '|' + s.ver;
+    if (this._k !== undefined && this._k !== key) {
+      if (s.ver === 'B' && s.started && FLOW[s.pos].kind !== 'results') requestAnimationFrame(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      else window.scrollTo(0, 0);
+    }
+    this._k = key;
+  }
+  componentWillUnmount() { clearTimeout(this._adv); clearTimeout(this._tt); }
+
+  icon(paths, size = 18) {
+    return React.createElement('svg', { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.75, strokeLinecap: 'round', strokeLinejoin: 'round', style: { display: 'block', flex: 'none' } },
+      ...paths.map((p, i) => React.createElement(p[0], { key: i, ...p[1] })));
+  }
+  icons() {
+    if (this._icons) return this._icons;
+    const lock = [['rect', { x: 3, y: 11, width: 18, height: 11, rx: 2 }], ['path', { d: 'M7 11V7a5 5 0 0 1 10 0v4' }]];
+    const unlock = [['rect', { x: 3, y: 11, width: 18, height: 11, rx: 2 }], ['path', { d: 'M7 11V7a5 5 0 0 1 9.9-1' }]];
+    this._icons = {
+      lock: this.icon(lock), lockSm: this.icon(lock, 12), unlock: this.icon(unlock), unlockSm: this.icon(unlock, 13),
+      check: this.icon([['path', { d: 'M20 6 9 17l-5-5' }]], 14),
+      back: this.icon([['path', { d: 'm12 19-7-7 7-7' }], ['path', { d: 'M19 12H5' }]], 16),
+    };
+    return this._icons;
+  }
+  flash(toast) { clearTimeout(this._tt); this.setState({ toast }); this._tt = setTimeout(() => this.setState({ toast: '' }), 2800); }
+
+  chosenMoves(q, a) {
+    if (a == null) return [];
+    if (q.type === 'yn') return (a === 'y' || a === 'soon') ? [q.move] : [];
+    return [].concat(a).map(id => (q.options || []).find(o => o.id === id)).filter(Boolean).flatMap(o => o.moves);
+  }
+  picks(A) {
+    const P = {};
+    QUESTIONS.forEach(q => { if (q.s === 0) return; this.chosenMoves(q, A[q.id]).forEach(id => { const m = BYID[id]; if (!m.needs || P[m.needs]) P[id] = true; }); });
+    return P;
+  }
+  ctx() { const A = this.state.answers, grade = +(A.grade || 8); return { A, P: this.picks(A), grade, cur: gradeStage(grade) }; }
+  tenseKey(s, cur) { return s === 0 ? 'now' : s < cur ? 'past' : s === 1 ? 'now' : 'will'; }
+  qText(q, cur) { const k = this.tenseKey(q.s, cur); return q.t[k] || q.t.will || q.t.now; }
+  tag(s, c) {
+    if (s === 0) return { tenseTag: 'About you', tenseClass: 'tag-neutral' };
+    const n = STAGES[s - 1].name;
+    return s < c.cur ? { tenseTag: 'Looking back · ' + n, tenseClass: 'tag-neutral' } : s === c.cur ? { tenseTag: 'You are here · ' + n, tenseClass: 'tag-accent' } : { tenseTag: 'Coming up · ' + n, tenseClass: 'tag-accent-2' };
+  }
+  lockedNeed(q, c) { if (q.type !== 'yn') return null; const m = BYID[q.move]; return m.needs && !c.P[m.needs] ? m.needs : null; }
+  lockedText(need) { return 'This needs ' + SHORT[need] + ' in ' + STAGES[BYID[need].s - 1].short + ', and your plan doesn’t have that yet.'; }
+  ansLabel(q, a, c) {
+    if (q.type === 'yn') { const o = YN[this.tenseKey(q.s, c.cur)].find(x => x.id === a); return o ? o.label : a === 'y' ? 'Yes' : a === 'soon' ? 'Not yet, but I will' : 'No'; }
+    return [].concat(a).map(id => (q.options.find(o => o.id === id) || {}).label).filter(Boolean).join(', ');
+  }
+
+  answer(q, id) {
+    const A = { ...this.state.answers };
+    if (q.type === 'multi') {
+      let cur = [].concat(A[q.id] || []);
+      if (id === 'none') cur = cur.includes('none') ? [] : ['none'];
+      else {
+        cur = cur.filter(x => x !== 'none');
+        if (cur.includes(id)) cur = cur.filter(x => x !== id);
+        else { if (cur.length >= (q.max || 2)) { this.flash('Pick up to two. Tap one to remove it first.'); return; } cur.push(id); }
+      }
+      A[q.id] = cur; this.setState({ answers: A }); return;
+    }
+    A[q.id] = id; this.setState({ answers: A });
+    clearTimeout(this._adv);
+    if (this.state.ver === 'A') this._adv = setTimeout(() => this.next(), 260); else this.next();
+  }
+  next() { this.setState(s => { let p = Math.min(s.pos + 1, FLOW.length - 1); if (s.ver === 'B' && FLOW[p].kind === 'recap') p = Math.min(p + 1, FLOW.length - 1); return { pos: p }; }); }
+  prev() { clearTimeout(this._adv); this.setState(s => (s.pos === 0 ? { started: false } : { pos: s.pos - 1 })); }
+  setPos(i) { clearTimeout(this._adv); this.setState({ pos: i, started: true }); }
+  goTo(moveId) { const q = qFor(moveId); if (q) this.setPos(QIDX[q.id]); }
+
+  segs() {
+    const pos = this.state.pos;
+    return [0, 1, 2, 3].map(g => {
+      const idx = FLOW.map((it, i) => ({ it, i })).filter(x => x.it.kind !== 'results' && (x.it.kind === 'q' ? x.it.q.s : x.it.s) === g);
+      return { w: Math.round(idx.filter(x => x.i < pos).length / idx.length * 100) + '%' };
+    });
+  }
+  recapInfo(s, c) {
+    const gws = MOVES.filter(m => m.s === s && deps(m.id).length);
+    return {
+      opened: gws.filter(g => c.P[g.id]).flatMap(g => deps(g.id).map(d => ({ title: d.title, when: 'Now possible in ' + STAGES[d.s - 1].short }))),
+      still: gws.filter(g => !c.P[g.id]).flatMap(g => deps(g.id).map(d => ({ title: d.title, need: 'Needs ' + SHORT[g.id] + ' in ' + STAGES[s - 1].short }))),
+    };
+  }
+
+  current(c) {
+    const icons = this.icons(), it = FLOW[this.state.pos];
+    if (it.kind === 'recap') {
+      const r = this.recapInfo(it.s, c);
+      return { ...CV0, isRecap: true, ...this.tag(it.s, c), segs: this.segs(), recapKicker: STAGES[it.s - 1].name + ' · done',
+        opened: r.opened, noOpened: !r.opened.length, still: r.still, hasStill: r.still.length > 0, nextLabel: 'Next: ' + STAGES[it.s].name, onNext: () => this.next() };
+    }
+    if (it.kind !== 'q') return { ...CV0 };
+    const q = it.q, ans = c.A[q.id], tk = this.tenseKey(q.s, c.cur), need = this.lockedNeed(q, c);
+    const list = QUESTIONS.filter(x => x.s === q.s);
+    const cv = { ...CV0, isQ: true, title: this.qText(q, c.cur), help: q.help || '', hasHelp: !!q.help, showTense: q.s > 0, ...this.tag(q.s, c), segs: this.segs(),
+      progressText: (q.s === 0 ? 'About you' : STAGES[q.s - 1].name) + ' · ' + (list.indexOf(q) + 1) + ' of ' + list.length };
+    if (need) return Object.assign(cv, { isLocked: true, lockedText: this.lockedText(need), lockFix: () => this.goTo(need), lockSkip: () => { this.setState(st => ({ answers: { ...st.answers, [q.id]: 'locked' } })); this.next(); } });
+    if (q.type === 'yn') { const op = opensOf([q.move]); Object.assign(cv, { hasQOpens: op.length > 0, qOpensText: op.join(', ') }); }
+    const raw = q.type === 'yn' ? YN[tk] : q.options;
+    const selArr = [].concat(ans || []);
+    cv.options = raw.map(o => {
+      const moves = q.type === 'yn' ? [] : (o.moves || []), nd = needOf(moves), op = opensOf(moves);
+      const locked = !!(nd && !c.P[nd]);
+      const sel = q.type === 'multi' ? selArr.includes(o.id) : ans === o.id;
+      return { label: o.label, sel, locked, open: !locked, onClick: () => this.answer(q, o.id),
+        hasOpens: op.length > 0, opensText: op.join(', '), needText: locked ? needText(nd) : '', goNeed: () => locked && this.goTo(nd),
+        border: sel ? 'var(--color-accent)' : 'transparent', bg: sel ? 'var(--color-accent-100)' : 'var(--color-surface)',
+        checkBorder: sel ? 'var(--color-accent)' : 'var(--color-neutral-400)', checkBg: sel ? 'var(--color-accent)' : 'transparent', checkIcon: sel ? icons.check : null,
+        checkRadius: q.type === 'multi' ? '8px' : '50%', pillBorder: sel ? 'var(--color-accent)' : 'var(--color-neutral-300)', pillBg: sel ? 'var(--color-accent-100)' : 'var(--color-surface)' };
+    });
+    cv.hasOptions = true;
+    const lockedOpts = cv.options.filter(o => o.locked);
+    cv.hasLockNotes = lockedOpts.length > 0;
+    cv.lockNotes = lockedOpts.map(o => o.label + ': ' + o.needText.replace('Needs', 'needs')).join(' ');
+    cv.hasOpensLegend = cv.options.some(o => o.open && o.hasOpens) || cv.hasQOpens;
+    if (q.type === 'multi') { const n = selArr.filter(x => x !== 'none').length; Object.assign(cv, { isMulti: true, cantContinue: selArr.length === 0, onContinue: () => this.next(), multiNote: selArr.includes('none') ? '' : n + ' of ' + (q.max || 2) + ' picked' }); }
+    return cv;
+  }
+
+  thread(c, cv) {
+    const out = [{ guide: true, text: 'Hi! I’ll ask you 14 quick questions about school and what you do outside it.', sub: 'Tap any of your answers to change it.' }];
+    const g = (text, sub, sub2) => out.push({ guide: true, text, sub: sub || '', sub2: sub2 || '' });
+    const recapMsg = s => { const r = this.recapInfo(s, c); g('That’s ' + STAGES[s - 1].short + ' done.', r.still.length ? 'Still locked: ' + r.still.map(o => o.title).join(', ') + '.' : '', r.opened.length ? 'Opened for later: ' + r.opened.map(o => o.title).join(', ') + '.' : ''); };
+    const pos = this.state.pos;
+    for (let i = 0; i < pos; i++) {
+      const it = FLOW[i];
+      if (it.kind === 'recap') { recapMsg(it.s); continue; }
+      if (it.kind !== 'q') continue;
+      const q = it.q, a = c.A[q.id], need = this.lockedNeed(q, c);
+      if (need) { g(this.qText(q, c.cur), 'Closed. ' + this.lockedText(need)); continue; }
+      g(this.qText(q, c.cur));
+      if (a == null || a === 'locked' || (Array.isArray(a) && !a.length)) continue;
+      out.push({ me: true, text: this.ansLabel(q, a, c), onClick: () => this.setPos(i) });
+      if (a === 'soon') g('Nice. I’ll count that as a goal for this year.');
+      const op = opensOf(this.chosenMoves(q, a).filter(m => c.P[m]));
+      if (op.length) g('That opens up later: ' + op.join(', ') + '.');
+    }
+    const it = FLOW[pos];
+    if (it.kind === 'recap') recapMsg(it.s);
+    else if (it.kind === 'q') g(cv.title, cv.help, cv.isLocked ? 'Closed. ' + cv.lockedText : cv.hasQOpens ? 'Opens up later: ' + cv.qOpensText : '');
+    out.forEach((m, i) => { const p = out[i - 1]; m.guide = !!m.guide; m.me = !!m.me; m.avatar = m.guide && !(p && p.guide); m.noAvatar = m.guide && !m.avatar; m.hasSub = !!m.sub; m.hasSub2 = !!m.sub2; m.gap = p && p.me && m.guide ? '8px' : '0px'; });
+    return out;
+  }
+
+  areaStatus(c) {
+    const st = {}; AREAS.forEach(a => { st[a.k] = 'gap'; });
+    QUESTIONS.forEach(q => {
+      if (q.s === 0) return;
+      const a = c.A[q.id], tk = this.tenseKey(q.s, c.cur);
+      const done = (tk === 'past' || tk === 'now') && a !== 'soon';
+      this.chosenMoves(q, a).filter(m => c.P[m]).forEach(m => { const k = BYID[m].area; if (done) st[k] = 'done'; else if (st[k] !== 'done') st[k] = 'planned'; });
+    });
+    return st;
+  }
+  results(c) {
+    const st = this.areaStatus(c);
+    const n = { done: 0, planned: 0, gap: 0 }; AREAS.forEach(a => { n[st[a.k]]++; });
+    const gaps = AREAS.filter(a => st[a.k] === 'gap');
+    const word = x => x === 1 ? '1 area' : x + ' areas';
+    return {
+      headline: n.gap === 0 ? 'No gaps. You’re covering all 9 areas.' : n.gap === 1 ? 'You have 1 gap to work on' : 'You have ' + n.gap + ' gaps to work on',
+      summary: 'GapFinder checked your answers against the 9 things students in our survey said help them get ready for college. You’re doing ' + word(n.done) + ', planning ' + word(n.planned) + ', and missing ' + word(n.gap) + '.',
+      hasGaps: gaps.length > 0, gapsTitle: gaps.length > 3 ? 'Start with these 3' : 'Your gaps',
+      gapsNote: 'Ordered by what students in our survey most want to start.' + (gaps.length > 3 ? ' The rest are marked below.' : ''),
+      top: gaps.slice(0, 3).map((a, i) => ({ rank: i + 1, label: a.label, step: a.step, stat: a.stat })),
+      areas: AREAS.map(a => ({ label: a.label, status: { done: 'Doing it', planned: 'Planned', gap: 'Gap' }[st[a.k]], cls: { done: 'tag-accent-2', planned: 'tag-neutral', gap: 'tag-accent' }[st[a.k]] })),
+    };
+  }
+
+  renderVals() {
+    const s = this.state, icons = this.icons(), c = this.ctx(), item = FLOW[s.pos];
+    const cv = this.current(c);
+    const done = s.started && item.kind === 'results';
+    return {
+      icons, cv,
+      goIntro: e => { if (e && e.preventDefault) e.preventDefault(); clearTimeout(this._adv); this.setState({ started: false }); },
+      gfIntro: !s.started, gfResults: done,
+      aQ: s.started && s.ver === 'A' && item.kind === 'q', aRecap: s.started && s.ver === 'A' && item.kind === 'recap',
+      bChat: s.started && s.ver === 'B' && item.kind !== 'results',
+      hasProgress: s.pos > 0, startLabel: s.pos > 0 ? 'Continue where I left off' : 'Start',
+      startGF: () => this.setState({ started: true }), resetGF: () => this.setState({ started: false, pos: 0, answers: {} }),
+      prev: () => this.prev(), thread: s.ver === 'B' && s.started ? this.thread(c, cv) : [],
+      r: done ? this.results(c) : {}, editPlan: () => this.setPos(QIDX[QUESTIONS.find(q => q.s === c.cur).id]),
+      hasToast: !!s.toast, toast: s.toast,
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="styles.css">
+<style>
+body{margin:0;background:var(--color-bg)}
+a{color:var(--color-accent-700)}
+a:hover{color:var(--color-accent-800)}
+</style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-direction:column;font-family:var(--font-body);color:var(--color-text);background:var(--color-bg)">
+
+<header style="max-width:1168px;width:100%;margin:0 auto;padding:0 24px;box-sizing:border-box">
+  <nav class="nav" style="padding:18px 0;flex-wrap:wrap;gap:20px">
+    <a href="#" onClick="{{ goHome }}" class="nav-brand" style="display:flex;align-items:center;gap:10px;font-size:20px;text-decoration:none">
+      <span style="width:28px;height:28px;border-radius:50%;background:var(--color-accent);display:block;box-shadow:10px 0 0 -4px var(--color-accent-2)"></span>
+      <span style="margin-left:6px">My Big Quest</span>
+    </a>
+    
+    
+    
+  </nav>
+</header>
+
+<sc-if value="{{ isGF }}" hint-placeholder-val="{{ false }}">
+<main style="max-width:1168px;width:100%;margin:0 auto;padding:4px 20px 48px;box-sizing:border-box;display:flex;flex-direction:column;gap:24px">
+  <sc-if value="{{ gfIntro }}" hint-placeholder-val="{{ true }}">
+  <section style="display:flex;flex-direction:column;gap:20px;max-width:600px;padding-top:20px">
+    <h1 style="margin:0;font-size:clamp(40px,7vw,58px)">GapFinder</h1>
+    <p style="margin:0;font-size:18px;color:var(--color-neutral-800);text-wrap:pretty">A few quick questions about middle school and high school. Then you’ll see what colleges would notice, and where the gaps are.</p>
+    <ol style="list-style:none;margin:4px 0 0;padding:0;display:flex;flex-direction:column;gap:10px">
+      <li style="display:flex;gap:14px;align-items:center;padding:14px 18px;border-radius:22px;background:var(--color-surface)"><span style="flex:none;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--color-accent);color:var(--color-bg);font-weight:700">1</span><span style="font-size:16px">Answer quick questions about middle school, early high school and late high school.</span></li>
+      <li style="display:flex;gap:14px;align-items:center;padding:14px 18px;border-radius:22px;background:var(--color-surface)"><span style="flex:none;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--color-accent-2);color:var(--color-bg);font-weight:700">2</span><span style="font-size:16px">See the gaps in your plan for your target college, and what to do next.</span></li>
+    </ol>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="tag tag-neutral">25 questions</span><span class="tag tag-neutral">About 4 minutes</span><span class="tag tag-neutral">Saved on this device</span></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px">
+      <button class="btn btn-primary" onClick="{{ startGF }}" style="font-size:17px;padding:14px 28px">{{ startLabel }}</button>
+      <sc-if value="{{ hasProgress }}" hint-placeholder-val="{{ false }}"><button class="btn btn-ghost" onClick="{{ resetGF }}" style="font-size:16px">Start over</button></sc-if>
+    </div>
+  </section>
+  </sc-if>
+
+  <sc-if value="{{ aQ }}" hint-placeholder-val="{{ false }}">
+  <section style="display:flex;flex-direction:column;gap:20px;max-width:640px;width:100%">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button class="btn btn-ghost" onClick="{{ prev }}" style="font-size:15px;padding:8px 14px 8px 8px;display:flex;align-items:center;gap:6px">{{ icons.back }}Back</button>
+      <span style="margin-left:auto;font-size:13px;color:var(--color-neutral-800)">{{ cv.progressText }}</span>
+    </div>
+    <div style="display:grid;grid-template-columns:4fr 8fr 7fr 8fr;gap:6px">
+      <sc-for list="{{ cv.segs }}" as="sg" hint-placeholder-count="4"><div style="height:8px;border-radius:999px;background:var(--color-neutral-200);overflow:hidden"><div style="width:{{ sg.w }};height:100%;border-radius:999px;background:var(--color-accent)"></div></div></sc-for>
+    </div>
+    <sc-if value="{{ cv.showWeek }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:8px;padding:14px 18px;border-radius:22px;background:var(--color-neutral-100)">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14px">{{ icons.hourglassSm }}<span style="font-weight:600">{{ cv.weekLabel }}</span><span style="margin-left:auto;color:{{ cv.weekTextColor }};font-weight:{{ cv.weekWeight }}">{{ cv.weekText }}</span></div>
+        <div style="height:10px;border-radius:999px;background:var(--color-neutral-200);overflow:hidden"><div style="width:{{ cv.weekW }};height:100%;border-radius:999px;background:{{ cv.weekColor }}"></div></div>
+        <sc-if value="{{ cv.weekOver }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;color:var(--color-accent-800)">{{ cv.weekNote }}</span></sc-if>
+      </div>
+    </sc-if>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <sc-if value="{{ cv.showTense }}" hint-placeholder-val="{{ false }}"><span class="tag {{ cv.tenseClass }}" style="align-self:flex-start">{{ cv.tenseTag }}</span></sc-if>
+      <h2 style="margin:0;font-size:clamp(26px,4.6vw,34px);line-height:1.15;text-wrap:balance">{{ cv.title }}</h2>
+      <sc-if value="{{ cv.hasHelp }}" hint-placeholder-val="{{ false }}"><p style="margin:0;font-size:15px;color:var(--color-neutral-800);text-wrap:pretty">{{ cv.help }}</p></sc-if>
+      <sc-if value="{{ cv.hasQMeta }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:4px 12px;border-radius:999px;background:var(--color-surface)">{{ icons.hourglassSm }}{{ cv.qHrs }}</span>
+          <sc-if value="{{ cv.qCosts }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:4px 12px;border-radius:999px;background:var(--color-surface)">{{ icons.coinsSm }}Usually costs money</span></sc-if>
+        </div>
+      </sc-if>
+      <sc-if value="{{ cv.hasQOpens }}" hint-placeholder-val="{{ false }}"><p style="margin:0;display:flex;gap:6px;align-items:center;font-size:14px;font-weight:600;color:var(--color-accent-700)">{{ icons.unlockSm }}Opens up later: {{ cv.qOpensText }}</p></sc-if>
+    </div>
+    <sc-if value="{{ cv.isLocked }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:12px;padding:20px;border-radius:26px;border:2px dashed var(--color-neutral-400)">
+        <span class="tag tag-neutral" style="align-self:flex-start;gap:5px;background:var(--color-neutral-200)">{{ icons.lockSm }}Closed</span>
+        <p style="margin:0;font-size:15px">{{ cv.lockedText }}</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-secondary" onClick="{{ cv.lockFix }}" style="font-size:15px;padding:11px 20px">Change that answer</button><button class="btn btn-primary" onClick="{{ cv.lockSkip }}" style="font-size:15px;padding:11px 22px">Continue</button></div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ cv.isSelect }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <select class="input" value="{{ cv.selectVal }}" onChange="{{ cv.onSelect }}" style="min-height:52px;font-size:16px">
+          <option value="">Choose a college…</option>
+          <sc-for list="{{ collegeOptions }}" as="c" hint-placeholder-count="10"><option value="{{ c.n }}">{{ c.n }}</option></sc-for>
+        </select>
+        <sc-if value="{{ cv.hasTier }}" hint-placeholder-val="{{ false }}"><p style="margin:0;padding:14px 16px;border-radius:20px;background:var(--color-accent-2-100);font-size:14px;color:var(--color-accent-2-900)">{{ cv.tierText }}</p></sc-if>
+        <button class="btn btn-primary" onClick="{{ cv.sendSelect }}" disabled="{{ cv.cantSendSelect }}" style="align-self:flex-start;font-size:16px;padding:13px 26px">Continue</button>
+      </div>
+    </sc-if>
+    <sc-if value="{{ cv.hasOptions }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <sc-for list="{{ cv.options }}" as="o" hint-placeholder-count="3">
+          <sc-if value="{{ o.open }}" hint-placeholder-val="{{ true }}">
+            <button onClick="{{ o.onClick }}" aria-pressed="{{ o.sel }}" style="display:flex;gap:14px;align-items:flex-start;width:100%;box-sizing:border-box;text-align:left;font:inherit;color:inherit;cursor:pointer;min-height:60px;padding:16px 18px;border-radius:24px;border:2px solid {{ o.border }};background:{{ o.bg }}">
+              <span style="flex:none;width:24px;height:24px;border-radius:{{ o.checkRadius }};display:grid;place-items:center;border:2px solid {{ o.checkBorder }};background:{{ o.checkBg }};color:var(--color-bg);box-sizing:border-box">{{ o.checkIcon }}</span>
+              <span style="display:flex;flex-direction:column;gap:6px;min-width:0">
+                <span style="font-size:16px;font-weight:600;line-height:1.35">{{ o.label }}</span>
+                <sc-if value="{{ o.hasMeta }}" hint-placeholder-val="{{ false }}"><span style="display:flex;gap:6px;flex-wrap:wrap">
+                  <sc-if value="{{ o.hasHrs }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:3px 10px;border-radius:999px;background:var(--color-bg)">{{ icons.hourglassSm }}{{ o.hrsText }}</span></sc-if>
+                  <sc-if value="{{ o.costs }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:3px 10px;border-radius:999px;background:var(--color-bg)">{{ icons.coinsSm }}Costs money</span></sc-if>
+                </span></sc-if>
+                <sc-if value="{{ o.hasOpens }}" hint-placeholder-val="{{ false }}"><span style="display:flex;gap:6px;align-items:flex-start;font-size:13px;font-weight:600;color:var(--color-accent-700)"><span style="margin-top:2px">{{ icons.unlockSm }}</span>Opens up later: {{ o.opensText }}</span></sc-if>
+              </span>
+            </button>
+          </sc-if>
+          <sc-if value="{{ o.locked }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;gap:14px;align-items:flex-start;padding:16px 18px;border-radius:24px;border:2px dashed var(--color-neutral-400);color:var(--color-neutral-700)">
+              <span style="flex:none;width:24px;height:24px;display:grid;place-items:center">{{ icons.lock }}</span>
+              <span style="display:flex;flex-direction:column;gap:4px;min-width:0">
+                <span style="font-size:16px;font-weight:600;line-height:1.35">{{ o.label }}</span>
+                <span style="font-size:13px">{{ o.needText }}</span>
+                <button class="btn btn-ghost" onClick="{{ o.goNeed }}" style="align-self:flex-start;font-size:13px;padding:6px 12px;margin-left:-12px">Change that answer</button>
+              </span>
+            </div>
+          </sc-if>
+        </sc-for>
+      </div>
+    </sc-if>
+    <sc-if value="{{ cv.isMulti }}" hint-placeholder-val="{{ false }}">
+      <div style="position:sticky;bottom:0;padding:12px 0 16px;background:var(--color-bg);display:flex;align-items:center;gap:14px">
+        <button class="btn btn-primary" onClick="{{ cv.onContinue }}" disabled="{{ cv.cantContinue }}" style="font-size:16px;padding:13px 28px">Continue</button>
+        <span style="font-size:13px;color:var(--color-neutral-800)">{{ cv.multiNote }}</span>
+      </div>
+    </sc-if>
+  </section>
+  </sc-if>
+
+  <sc-if value="{{ aRecap }}" hint-placeholder-val="{{ false }}">
+  <section style="display:flex;flex-direction:column;gap:22px;max-width:640px;width:100%">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button class="btn btn-ghost" onClick="{{ prev }}" style="font-size:15px;padding:8px 14px 8px 8px;display:flex;align-items:center;gap:6px">{{ icons.back }}Back</button>
+    </div>
+    <div style="display:grid;grid-template-columns:4fr 8fr 7fr 8fr;gap:6px">
+      <sc-for list="{{ cv.segs }}" as="sg" hint-placeholder-count="4"><div style="height:8px;border-radius:999px;background:var(--color-neutral-200);overflow:hidden"><div style="width:{{ sg.w }};height:100%;border-radius:999px;background:var(--color-accent)"></div></div></sc-for>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <span class="card-kicker" style="font-size:12px;color:var(--color-accent-700)">{{ cv.recapKicker }}</span>
+      <h2 style="margin:0;font-size:clamp(28px,4.8vw,38px)">Here’s what carries forward</h2>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;padding:14px 18px;border-radius:22px;background:var(--color-neutral-100)">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14px">{{ icons.hourglassSm }}<span style="font-weight:600">{{ cv.weekLabel }}</span><span style="margin-left:auto;color:{{ cv.weekTextColor }};font-weight:{{ cv.weekWeight }}">{{ cv.weekText }}</span></div>
+      <div style="height:10px;border-radius:999px;background:var(--color-neutral-200);overflow:hidden"><div style="width:{{ cv.weekW }};height:100%;border-radius:999px;background:{{ cv.weekColor }}"></div></div>
+      <sc-if value="{{ cv.weekOver }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;color:var(--color-accent-800)">{{ cv.weekNote }}</span></sc-if>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;align-items:center;gap:8px;color:var(--color-accent-700)">{{ icons.unlock }}<h4 style="margin:0;color:var(--color-text)">Opened for later</h4></div>
+      <sc-if value="{{ cv.noOpened }}" hint-placeholder-val="{{ false }}"><p style="margin:0;font-size:14px;color:var(--color-neutral-800)">Nothing yet. Answers marked “Opens up later” are what make the big achievements in late high school possible.</p></sc-if>
+      <sc-for list="{{ cv.opened }}" as="op" hint-placeholder-count="1">
+        <div style="display:flex;flex-direction:column;gap:2px;padding:14px 16px;border-radius:20px;background:var(--color-accent-100)"><span style="font-weight:600;font-size:15px">{{ op.title }}</span><span style="font-size:13px;color:var(--color-accent-900)">{{ op.when }}</span></div>
+      </sc-for>
+    </div>
+    <sc-if value="{{ cv.hasStill }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:center;gap:8px;color:var(--color-neutral-700)">{{ icons.lock }}<h4 style="margin:0;color:var(--color-text)">Still locked</h4></div>
+        <sc-for list="{{ cv.still }}" as="op" hint-placeholder-count="2">
+          <div style="display:flex;flex-direction:column;gap:2px;padding:12px 16px;border-radius:20px;border:2px dashed var(--color-neutral-300)"><span style="font-weight:600;font-size:15px">{{ op.title }}</span><span style="font-size:13px;color:var(--color-neutral-800)">{{ op.need }}</span></div>
+        </sc-for>
+      </div>
+    </sc-if>
+    <button class="btn btn-primary" onClick="{{ cv.onNext }}" style="align-self:flex-start;font-size:16px;padding:13px 26px">{{ cv.nextLabel }}</button>
+  </section>
+  </sc-if>
+
+  <sc-if value="{{ bChat }}" hint-placeholder-val="{{ false }}">
+  <section style="display:flex;flex-direction:column;max-width:680px;width:100%">
+    <div style="position:sticky;top:0;z-index:4;background:var(--color-bg);padding:10px 0;box-shadow:0 1px 0 var(--color-divider);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span style="font-family:var(--font-heading);font-size:18px">GapFinder</span>
+      <span class="tag {{ cv.tenseClass }}">{{ cv.tenseTag }}</span>
+      <sc-if value="{{ cv.showWeek }}" hint-placeholder-val="{{ false }}">
+        <span style="margin-left:auto;display:flex;align-items:center;gap:8px;font-size:13px;color:{{ cv.weekTextColor }};font-weight:{{ cv.weekWeight }}">{{ icons.hourglassSm }}<span style="width:64px;height:8px;border-radius:999px;background:var(--color-neutral-200);overflow:hidden;display:block"><span style="display:block;width:{{ cv.weekW }};height:100%;background:{{ cv.weekColor }}"></span></span>{{ cv.weekShort }}</span>
+      </sc-if>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;padding:18px 0 20px">
+      <sc-for list="{{ thread }}" as="mg" hint-placeholder-count="3">
+        <sc-if value="{{ mg.guide }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;gap:10px;align-items:flex-end;max-width:90%;margin-top:{{ mg.gap }}">
+            <sc-if value="{{ mg.avatar }}" hint-placeholder-val="{{ true }}"><span style="flex:none;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--color-accent-2);color:var(--color-bg);font-family:var(--font-heading);font-size:15px">Q</span></sc-if>
+            <sc-if value="{{ mg.noAvatar }}" hint-placeholder-val="{{ false }}"><span style="flex:none;width:32px"></span></sc-if>
+            <div style="padding:12px 16px;border-radius:22px 22px 22px 6px;background:var(--color-surface);display:flex;flex-direction:column;gap:6px;min-width:0">
+              <span style="font-size:16px;line-height:1.4;text-wrap:pretty">{{ mg.text }}</span>
+              <sc-if value="{{ mg.hasSub }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;color:var(--color-neutral-800);text-wrap:pretty">{{ mg.sub }}</span></sc-if>
+              <sc-if value="{{ mg.hasSub2 }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;font-weight:600;color:var(--color-accent-700);text-wrap:pretty">{{ mg.sub2 }}</span></sc-if>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ mg.me }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ mg.onClick }}" title="Tap to change this answer" style="align-self:flex-end;max-width:80%;text-align:right;font:inherit;font-size:15px;line-height:1.4;padding:10px 16px;border-radius:22px 22px 6px 22px;border:none;cursor:pointer;background:var(--color-accent-200);color:var(--color-text);margin-top:4px" style-hover="background:var(--color-accent-300)">{{ mg.text }}</button>
+        </sc-if>
+      </sc-for>
+    </div>
+    <div style="position:sticky;bottom:0;z-index:4;padding:14px 0 18px;background:var(--color-bg);box-shadow:0 -1px 0 var(--color-divider);display:flex;flex-direction:column;gap:12px">
+      <sc-if value="{{ cv.isLocked }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-secondary" onClick="{{ cv.lockFix }}" style="font-size:15px;padding:11px 20px">Change my earlier answer</button><button class="btn btn-primary" onClick="{{ cv.lockSkip }}" style="font-size:15px;padding:11px 22px">Continue</button></div>
+      </sc-if>
+      <sc-if value="{{ cv.isSelect }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <select class="input" value="{{ cv.selectVal }}" onChange="{{ cv.onSelect }}" style="min-height:48px;font-size:16px;flex:1;min-width:200px">
+            <option value="">Choose a college…</option>
+            <sc-for list="{{ collegeOptions }}" as="c" hint-placeholder-count="10"><option value="{{ c.n }}">{{ c.n }}</option></sc-for>
+          </select>
+          <button class="btn btn-primary" onClick="{{ cv.sendSelect }}" disabled="{{ cv.cantSendSelect }}" style="font-size:15px;padding:11px 22px">Send</button>
+        </div>
+      </sc-if>
+      <sc-if value="{{ cv.hasOptions }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <sc-for list="{{ cv.options }}" as="o" hint-placeholder-count="3">
+            <sc-if value="{{ o.open }}" hint-placeholder-val="{{ true }}">
+              <button onClick="{{ o.onClick }}" aria-pressed="{{ o.sel }}" style="display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:9px 16px;border-radius:999px;font:inherit;font-size:15px;text-align:left;cursor:pointer;border:2px solid {{ o.pillBorder }};background:{{ o.pillBg }};color:var(--color-text)">
+                <span>{{ o.label }}</span>
+                <sc-if value="{{ o.hasHrsShort }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;color:var(--color-neutral-800);white-space:nowrap">{{ o.hrsShort }}</span></sc-if>
+                <sc-if value="{{ o.hasOpens }}" hint-placeholder-val="{{ false }}"><span style="color:var(--color-accent-700)">{{ icons.unlockSm }}</span></sc-if>
+              </button>
+            </sc-if>
+            <sc-if value="{{ o.locked }}" hint-placeholder-val="{{ false }}">
+              <span style="display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:9px 16px;border-radius:999px;font-size:15px;border:2px dashed var(--color-neutral-400);color:var(--color-neutral-700);box-sizing:border-box">{{ icons.lockSm }}{{ o.label }}</span>
+            </sc-if>
+          </sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{ cv.hasOpensLegend }}" hint-placeholder-val="{{ false }}"><span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--color-accent-700)">{{ icons.unlockSm }}Opens up something in a later stage</span></sc-if>
+      <sc-if value="{{ cv.hasLockNotes }}" hint-placeholder-val="{{ false }}"><span style="display:flex;align-items:flex-start;gap:6px;font-size:12px;color:var(--color-neutral-800)"><span style="margin-top:1px">{{ icons.lockSm }}</span>{{ cv.lockNotes }}</span></sc-if>
+      <sc-if value="{{ cv.isMulti }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:12px"><button class="btn btn-primary" onClick="{{ cv.onContinue }}" disabled="{{ cv.cantContinue }}" style="font-size:15px;padding:11px 24px">Send</button><span style="font-size:13px;color:var(--color-neutral-800)">{{ cv.multiNote }}</span></div>
+      </sc-if>
+      <sc-if value="{{ cv.isRecap }}" hint-placeholder-val="{{ false }}"><button class="btn btn-primary" onClick="{{ cv.onNext }}" style="align-self:flex-start;font-size:15px;padding:11px 24px">{{ cv.nextLabel }}</button></sc-if>
+    </div>
+  </section>
+  </sc-if>
+
+  <sc-if value="{{ gfResults }}" hint-placeholder-val="{{ false }}">
+  <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,400px),1fr));gap:28px;align-items:start">
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="card-kicker" style="font-size:12px;color:var(--color-accent-700)">Your GapFinder results · {{ r.collegeName }}</div>
+      <h1 style="margin:0;font-size:clamp(32px,4.4vw,46px);text-wrap:balance">{{ r.headline }}</h1>
+      <p style="margin:0;font-size:16px;color:var(--color-neutral-800);text-wrap:pretty">{{ r.summary }}</p>
+      <div class="card elev-sm" style="padding:24px;gap:16px;background:var(--color-neutral-100);margin-top:8px">
+        <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
+          <span style="font-family:var(--font-heading);font-size:64px;line-height:1;color:{{ r.scoreColor }}">{{ r.score }}</span>
+          <span style="font-size:16px;color:var(--color-neutral-700)">/ 100 application strength</span>
+        </div>
+        <div style="position:relative;height:16px;border-radius:999px;background:var(--color-neutral-200)">
+          <div style="width:{{ r.scoreW }};height:100%;border-radius:999px;background:{{ r.scoreColor }}"></div>
+          <div style="position:absolute;left:{{ r.barW }};top:-6px;width:4px;height:28px;border-radius:2px;background:var(--color-text)"></div>
+        </div>
+        <div style="font-size:13px;color:var(--color-neutral-800)">Black line: the bar for {{ r.tierLabelLower }} colleges ({{ r.bar }}).</div>
+      </div>
+    </div>
+    <div class="card" style="padding:26px;gap:16px">
+      <h4 style="margin:0">What admissions would weigh</h4>
+      <p style="margin:0;font-size:13px;color:var(--color-neutral-700)">Most important first. Orange bars fall short of the line.</p>
+      <sc-for list="{{ r.factors }}" as="f" hint-placeholder-count="7">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;justify-content:space-between;gap:12px;font-size:14px"><span style="font-weight:600">{{ f.label }}</span><span style="color:var(--color-neutral-700)">{{ f.pctText }}</span></div>
+          <div style="position:relative;height:10px;border-radius:999px;background:var(--color-neutral-200)">
+            <div style="width:{{ f.w }};height:100%;border-radius:999px;background:{{ f.color }}"></div>
+            <div style="position:absolute;left:{{ r.barW }};top:-4px;width:3px;height:18px;border-radius:2px;background:var(--color-text)"></div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+  <section style="display:flex;flex-direction:column;gap:16px">
+    <h2 style="margin:0">Your biggest gaps</h2>
+    <sc-if value="{{ r.noGaps }}" hint-placeholder-val="{{ false }}">
+      <div class="card" style="padding:22px;background:var(--color-accent-2-100)"><div class="card-title">Every factor clears the bar.</div><p class="card-body" style="font-size:14px">Keep the safety habits going so nothing slips, and check the risks below.</p></div>
+    </sc-if>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px">
+      <sc-for list="{{ r.gaps }}" as="g" hint-placeholder-count="3">
+        <div class="card" style="padding:22px;gap:10px;background:var(--color-accent-100)">
+          <div style="display:flex;align-items:center;gap:10px"><span style="width:30px;height:30px;flex:none;border-radius:50%;display:grid;place-items:center;background:var(--color-accent);color:var(--color-bg);font-weight:700;font-size:14px">{{ g.rank }}</span><span class="card-title" style="font-size:19px">{{ g.label }}</span></div>
+          <p style="margin:0;font-size:14px;color:var(--color-accent-900);text-wrap:pretty">{{ g.fix }}</p>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+  <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:20px;align-items:start">
+    <div class="card" style="padding:24px;gap:12px">
+      <div style="display:flex;align-items:center;gap:8px;color:var(--color-accent-2-700)">{{ icons.shield }}<h4 style="margin:0;color:var(--color-text)">Unprotected risks</h4></div>
+      <sc-if value="{{ r.noRisks }}" hint-placeholder-val="{{ false }}"><p style="margin:0;font-size:14px">Your plan covers every kind of risk we check for.</p></sc-if>
+      <sc-for list="{{ r.risks }}" as="k" hint-placeholder-count="2">
+        <div style="display:flex;flex-direction:column;gap:2px;padding:12px 14px;border-radius:18px;background:var(--color-bg)"><span style="font-weight:600;font-size:14px">{{ k.label }}</span><span style="font-size:13px;color:var(--color-neutral-800)">{{ k.fix }}</span></div>
+      </sc-for>
+    </div>
+    <div class="card" style="padding:24px;gap:12px">
+      <div style="display:flex;align-items:center;gap:8px;color:var(--color-neutral-700)">{{ icons.lock }}<h4 style="margin:0;color:var(--color-text)">Doors you closed</h4></div>
+      <sc-if value="{{ r.noClosed }}" hint-placeholder-val="{{ false }}"><p style="margin:0;font-size:14px">None. Every big achievement was still open to you.</p></sc-if>
+      <sc-for list="{{ r.closed }}" as="k" hint-placeholder-count="2">
+        <div style="display:flex;flex-direction:column;gap:2px;padding:12px 14px;border-radius:18px;border:2px dashed var(--color-neutral-300)"><span style="font-weight:600;font-size:14px">{{ k.title }}</span><span style="font-size:13px;color:var(--color-neutral-800)">{{ k.why }}</span></div>
+      </sc-for>
+    </div>
+  </section>
+  <section style="display:flex;flex-direction:column;max-width:720px">
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <h2 style="margin:0">What to do next</h2>
+      <p style="margin:0;font-size:15px;color:var(--color-neutral-800)">Things still open to you that close your biggest gaps, starting with what you can do in {{ r.gradeLabel }}.</p>
+      <sc-if value="{{ r.noSteps }}" hint-placeholder-val="{{ false }}"><p style="margin:0;font-size:14px">Nothing left to add for your top gaps. Focus on doing what you picked well.</p></sc-if>
+      <ol style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px">
+        <sc-for list="{{ r.steps }}" as="n" hint-placeholder-count="4">
+          <li style="display:flex;gap:14px;align-items:flex-start;padding:14px 16px;border-radius:22px;background:var(--color-surface)">
+            <span class="tag {{ n.whenClass }}" style="flex:none;margin-top:2px">{{ n.when }}</span>
+            <div style="display:flex;flex-direction:column;gap:2px"><span style="font-weight:600;font-size:15px">{{ n.title }}</span><span style="font-size:13px;color:var(--color-neutral-800)">Helps with {{ n.helps }}</span></div>
+          </li>
+        </sc-for>
+      </ol>
+    </div>
+  </section>
+  <section style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+    <button class="btn btn-secondary" onClick="{{ editPlan }}" style="font-size:15px;padding:11px 20px">Change my answers</button>
+    <button class="btn btn-ghost" onClick="{{ resetGF }}" style="font-size:15px">Start over</button>
+    <p style="margin:0 0 0 auto;font-size:12px;color:var(--color-neutral-700);max-width:520px">Weighting follows NACAC’s Factors in the Admission Decision: grades and rigor first, then tests, then essays, recommendations and activities. A planning tool, not a prediction. Some majors are more competitive than the school overall.</p>
+  </section>
+  </sc-if>
+</main>
+</sc-if>
+
+<sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+  <div role="status" style="position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:30;padding:12px 20px;border-radius:999px;background:var(--color-neutral-900);color:var(--color-bg);font-size:14px;box-shadow:var(--shadow-lg);max-width:calc(100% - 48px)">{{ toast }}</div>
+</sc-if>
+
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;gfVersion&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;A&quot;,&quot;B&quot;],&quot;default&quot;:&quot;A&quot;,&quot;tsType&quot;:&quot;'A'|'B'&quot;,&quot;section&quot;:&quot;GapFinder&quot;}}">
+const STAGES = [
+  { n: 1, name: 'Middle school', short: 'middle school', range: 'Grades 6–8' },
+  { n: 2, name: 'Early high school', short: 'early high school', range: 'Grades 9–10' },
+  { n: 3, name: 'Late high school', short: 'late high school', range: 'Grades 11–12' },
+];
+const MV = (id, s, title, h, f, o) => ({ id, s, title, h, f, ...(o || {}) });
+const MOVES = [
+  MV('habits', 1, 'Build strong study habits now', 3, { grades: 3 }, { risk: 'grades' }),
+  MV('mentors2', 1, 'Line up two mentors, not one', 0, { recs: 1 }, { risk: 'recs' }),
+  MV('sleep', 1, 'Protect your sleep and energy', 0, { grades: 1 }, { risk: 'burnout' }),
+  MV('record', 1, 'Keep a simple record of what you do', 0, { essays: 1 }, { risk: 'paper' }),
+  MV('save', 1, 'Save a little each month', 0, {}, { risk: 'money' }),
+  MV('sport', 1, 'Commit to one sport', 6, { depth: 1 }, { cost: true }),
+  MV('compete', 1, 'Compete in one academic track', 4, { depth: 1 }, { cost: true }),
+  MV('art', 1, 'Start an instrument or art form seriously', 5, { depth: 1 }, { cost: true }),
+  MV('club', 1, 'Join a club and take a real role', 2, { lead: 2 }),
+  MV('service', 1, 'Turn a skill into steady service', 3, { lead: 2 }),
+  MV('honors', 1, 'Qualify for the honors track', 2, { rigor: 2 }),
+  MV('catch', 2, 'Catch a slipping grade early', 1, { grades: 3 }, { risk: 'grades' }),
+  MV('teachers2', 2, 'Keep two teachers who know you well', 0, { recs: 2 }, { risk: 'recs' }),
+  MV('health', 2, 'Protect your health in busy terms', 0, { grades: 1 }, { risk: 'burnout' }),
+  MV('map', 2, 'Plan your 4-year course map', 0, { rigor: 1 }, { risk: 'paper' }),
+  MV('firstap', 2, 'Take your first honors or AP courses', 4, { rigor: 3 }),
+  MV('project', 2, 'Start a long-term passion or research project', 4, { depth: 2 }),
+  MV('comp3', 2, 'Enter 3 competitions, aim to place in 1', 5, { depth: 2 }, { needs: 'compete', cost: true }),
+  MV('deepen', 2, 'Go deeper in one activity', 4, { depth: 2 }),
+  MV('steady', 2, 'Keep up steady service or leadership', 3, { lead: 2 }),
+  MV('gpa', 3, 'Protect your GPA in the hardest year', 2, { grades: 3 }, { risk: 'grades' }),
+  MV('sat', 3, 'Prep for the SAT/ACT with a backup date', 3, { tests: 4 }, { risk: 'tests', cost: true }),
+  MV('letters', 3, 'Secure two strong recommendation letters', 0, { recs: 3 }, { risk: 'recs' }),
+  MV('timeline', 3, 'Build your application timeline early', 1, { essays: 1 }, { risk: 'paper' }),
+  MV('reserve', 3, 'Plan for application fees', 0, {}, { risk: 'money' }),
+  MV('win', 3, 'Win or place in a major competition', 6, { depth: 4 }, { needs: 'comp3' }),
+  MV('varsity', 3, 'Make varsity or team captain', 8, { depth: 3, lead: 1 }, { needs: 'sport' }),
+  MV('artsd', 3, 'Earn an arts distinction', 6, { depth: 4 }, { needs: 'art' }),
+  MV('publish', 3, 'Publish or showcase your project', 5, { depth: 4 }, { needs: 'project' }),
+  MV('heavyap', 3, 'Carry a heavy AP course load', 6, { rigor: 4, tests: 1 }, { needs: 'firstap' }),
+  MV('leader', 3, 'Take a real leadership role', 3, { lead: 3 }),
+  MV('essays', 3, 'Write and revise standout essays', 2, { essays: 4 }),
+  MV('summer', 3, 'Do a meaningful summer', 0, { depth: 2, essays: 1 }, { cost: true, hl: 'Summer only' }),
+];
+const BYID = Object.fromEntries(MOVES.map(m => [m.id, m]));
+const SHORT = { sport: 'one sport', compete: 'academic competitions', art: 'an instrument or art form', comp3: 'entering competitions', project: 'a long-term project', firstap: 'honors or AP classes' };
+const FACTORS = [
+  { k: 'grades', label: 'Grades', w: .30, cap: 10, fix: 'Grades are the biggest thing colleges look at. A study routine now and catching a dip early protect them more than anything else.' },
+  { k: 'rigor', label: 'Course rigor', w: .20, cap: 9, fix: 'Colleges want to see you took the hardest classes you could handle. Honors or AP in 9th and 10th grade is what makes a heavy AP load possible later.' },
+  { k: 'tests', label: 'SAT / ACT', w: .15, cap: 4, fix: 'More colleges are requiring test scores again. Plan prep on a timeline with a backup date for a retake.' },
+  { k: 'depth', label: 'A deep achievement', w: .15, cap: 8, fix: 'You need one thing you went really far with. Pick something that opens up a big achievement later (a sport, competitions, an art, or a long project) and stick with it.' },
+  { k: 'lead', label: 'Leadership & service', w: .08, cap: 6, fix: 'Leading something counts for more than being a member. Take a real role in a club or a cause and keep it going for years.' },
+  { k: 'essays', label: 'Essays', w: .06, cap: 5, fix: 'Essays are the one part fully in your control. Keep a record of what you do now, so you have real stories to tell later.' },
+  { k: 'recs', label: 'Recommendations', w: .06, cap: 5, fix: 'Strong letters come from teachers who know you well. Build two of those relationships, not one.' },
+];
+const RISKS = [
+  { k: 'grades', label: 'A slipping grade has no safety net', fix: 'Add a study routine, or a plan to catch dips early.' },
+  { k: 'recs', label: 'No backup if a recommender falls through', fix: 'Keep two teachers or mentors who know your work.' },
+  { k: 'burnout', label: 'Nothing protecting you from burnout', fix: 'Protect sleep and pace busy terms.' },
+  { k: 'paper', label: 'Deadlines and records could slip', fix: 'Keep a record of activities and one timeline for deadlines.' },
+  { k: 'money', label: 'Fees could force you to cut something', fix: 'Save a little early, or plan to use fee waivers.' },
+  { k: 'tests', label: 'No plan for the SAT/ACT', fix: 'Pick a test date with a backup, and study on a schedule.' },
+];
+const TIERS = {
+  most: { label: 'Most selective', phrase: 'one of the most selective colleges', bar: 72, note: 'Almost every part of your application has to be strong.' },
+  high: { label: 'Highly selective', phrase: 'highly selective', bar: 60, note: 'Strong grades and hard classes are expected. One deep achievement helps you stand out.' },
+  sel: { label: 'Selective', phrase: 'selective', bar: 48, note: 'Solid grades and hard classes carry most of the weight. Some majors are much more competitive.' },
+  broad: { label: 'More open', phrase: 'more open than most', bar: 35, note: 'Steady grades and finishing strong matter most.' },
+};
+const COLLEGES = [
+  ['University of Washington', 'sel'], ['Stanford', 'most'], ['Harvard', 'most'], ['MIT', 'most'], ['Princeton', 'most'], ['Columbia', 'most'], ['Duke', 'most'], ['Johns Hopkins', 'most'], ['Rice', 'most'], ['Cornell', 'most'], ['UPenn (Wharton)', 'most'], ['UCLA', 'most'], ['UC Berkeley', 'high'], ['Carnegie Mellon', 'high'], ['University of Michigan', 'high'], ['Emory', 'high'], ['NYU', 'high'], ['USC', 'high'], ['WashU in St. Louis', 'high'], ['UC Irvine', 'high'], ['University of Waterloo', 'high'], ['University of Portland', 'broad'], ['John Jay College', 'broad'], ['Not sure yet', 'sel'],
+].map(([n, tier]) => ({ n, tier }));
+const FIELDS = ['Medicine & health', 'Engineering & tech', 'Science & research', 'Business & finance', 'Law & government', 'Arts & design', 'Not sure yet'];
+const O = (id, label, moves) => ({ id, label, moves: moves || [] });
+const QUESTIONS = [
+  { id: 'grade', s: 0, type: 'single', t: { now: 'What grade are you in?' }, options: [6, 7, 8, 9, 10, 11, 12].map(g => O(String(g), g + 'th grade')) },
+  { id: 'field', s: 0, type: 'single', t: { now: 'Which field are you curious about?' }, help: 'A guess is fine. It’s used to match you with a mentor.', options: FIELDS.map(f => O(f, f)) },
+  { id: 'college', s: 0, type: 'select', t: { now: 'What’s your #1 target college?' }, help: 'This sets how high the bar is.' },
+  { id: 'hours', s: 0, type: 'single', t: { now: 'Outside school and homework, how much free time do you have in a normal week?' }, help: 'This becomes your time budget for each stage.', options: [O('4', 'Under 5 hours'), O('8', '5 to 10 hours'), O('12', '10 to 15 hours'), O('16', 'More than 15 hours')] },
+  { id: 'routine', s: 1, type: 'yn', move: 'habits', t: { now: 'Do you have a regular homework and review routine?', past: 'In middle school, did you have a regular homework and review routine?' } },
+  { id: 'main', s: 1, type: 'multi', max: 2, t: { now: 'What do you do outside class that you’d stick with for years?', past: 'In middle school, what did you do outside class and stick with?' }, help: 'Pick up to two. Some of these open up big achievements in high school.', options: [
+    O('sport', 'One sport, season after season', ['sport']), O('compete', 'Academic competitions (math, science fair, debate, robotics)', ['compete']), O('art', 'An instrument or art form', ['art']), O('club', 'A club where I have a real role', ['club']), O('service', 'Volunteering, regularly', ['service']), O('none', 'Still exploring')] },
+  { id: 'honors', s: 1, type: 'yn', move: 'honors', t: { now: 'Are you working toward honors classes for 9th grade?', past: 'Did you get into honors classes for 9th grade?' } },
+  { id: 'mentors', s: 1, type: 'yn', move: 'mentors2', t: { now: 'Are there two teachers or coaches who know your work well?', past: 'In middle school, did two teachers or coaches know your work well?' }, help: 'Two means you’re covered if one moves away or gets busy.' },
+  { id: 'record', s: 1, type: 'yn', move: 'record', t: { now: 'Do you keep a list of your activities and awards?', past: 'Did you keep a list of your activities and awards?' }, help: 'It makes applications much easier later.' },
+  { id: 'sleep', s: 1, type: 'yn', move: 'sleep', t: { now: 'Do you usually get enough sleep on school nights?', past: 'In middle school, did you usually get enough sleep on school nights?' } },
+  { id: 'save', s: 1, type: 'yn', move: 'save', t: { now: 'Do you save any money for camps, contests or trips?', past: 'Did you save any money for camps, contests or trips?' } },
+  { id: 'ap', s: 2, type: 'yn', move: 'firstap', t: { will: 'Will you take honors or AP classes in 9th and 10th grade?', past: 'Did you take honors or AP classes in 9th and 10th grade?' } },
+  { id: 'build', s: 2, type: 'multi', max: 2, t: { will: 'How will you build on what you do outside class?', past: 'In 9th and 10th grade, how did you build on what you did outside class?' }, help: 'Pick up to two.', options: [
+    O('deepen', 'Go deeper in one thing', ['deepen']), O('comp3', 'Enter 3 competitions and aim to place in one', ['comp3']), O('project', 'Start a long-term passion or research project', ['project']), O('steady', 'Keep up my volunteering or club role', ['steady']), O('none', 'None of these')] },
+  { id: 'slip', s: 2, type: 'single', t: { will: 'If a grade starts slipping, what will you do?', past: 'When a grade started slipping, what did you do?' }, options: [O('help', 'Get help right away', ['catch']), O('wait', 'Wait and see if it gets better')] },
+  { id: 'teachers', s: 2, type: 'yn', move: 'teachers2', t: { will: 'Will you get to know two teachers well?', past: 'Did two teachers get to know you well?' }, help: 'They’re who you’ll ask for recommendation letters.' },
+  { id: 'map', s: 2, type: 'yn', move: 'map', t: { will: 'Will you plan your 4-year course map with an adviser?', past: 'Did you plan your 4-year course map with an adviser?' }, help: 'So you never miss a class you need for a harder one later.' },
+  { id: 'pace', s: 2, type: 'yn', move: 'health', t: { will: 'In busy weeks, will you have a way to pace yourself?', past: 'In busy weeks, did you have a way to pace yourself?' } },
+  { id: 'heavyap', s: 3, type: 'yn', move: 'heavyap', t: { will: 'Will you take a heavy AP course load?' } },
+  { id: 'big', s: 3, type: 'multi', max: 2, t: { will: 'What will your big achievement be?' }, help: 'Pick up to two. Some need groundwork from earlier stages.', options: [
+    O('win', 'Win or place in a major competition', ['win']), O('varsity', 'Make varsity or team captain', ['varsity']), O('artsd', 'Earn an arts distinction', ['artsd']), O('publish', 'Publish or showcase my project', ['publish']), O('leader', 'Lead a club, team or initiative', ['leader']), O('summer', 'A meaningful summer program or internship', ['summer']), O('none', 'None of these')] },
+  { id: 'sat', s: 3, type: 'yn', move: 'sat', t: { will: 'Will you prep for the SAT or ACT, with a backup test date?' } },
+  { id: 'essays', s: 3, type: 'yn', move: 'essays', t: { will: 'Will you start your college essays early and revise them?' } },
+  { id: 'letters', s: 3, type: 'yn', move: 'letters', t: { will: 'Will you ask two teachers for recommendation letters early?' } },
+  { id: 'gpa', s: 3, type: 'yn', move: 'gpa', t: { will: 'In your hardest year, will you have a plan to protect your grades?' } },
+  { id: 'deadlines', s: 3, type: 'yn', move: 'timeline', t: { will: 'Will you keep every application deadline in one place?' } },
+  { id: 'fees', s: 3, type: 'single', t: { will: 'How will you cover application fees?' }, options: [O('save', 'Save up ahead of time', ['reserve']), O('waive', 'Use fee waivers', ['reserve']), O('none', 'Haven’t thought about it')] },
+];
+const MENTORS = [
+  { id: 'raman', name: 'Dr. Priya Raman', role: 'Pediatrician', field: 'Medicine & health', years: 12, bio: 'Went from a community college start to medical school. Happy to talk honestly about the pre-med path.', helps: ['Pre-med path', 'Hospital volunteering', 'Science classes'] },
+  { id: 'abrams', name: 'Ruth Abrams', role: 'Epidemiologist, county health dept.', field: 'Medicine & health', years: 9, bio: 'Tracks disease outbreaks with data. Public health is medicine without the white coat.', helps: ['Public health careers', 'Stats & data', 'Research projects'] },
+  { id: 'bell', name: 'Marcus Bell', role: 'Software engineer', field: 'Engineering & tech', years: 8, bio: 'Builds apps used by millions. Started by making games in middle school.', helps: ['Learning to code', 'Passion projects', 'Robotics & comps'] },
+  { id: 'ortiz', name: 'Elena Ortiz', role: 'Structural engineer', field: 'Engineering & tech', years: 14, bio: 'Designs bridges and buildings. Ask her about architecture versus engineering.', helps: ['Architecture vs. engineering', 'Math & physics', 'Internships'] },
+  { id: 'okafor', name: 'Dr. Amara Okafor', role: 'Marine biologist', field: 'Science & research', years: 11, bio: 'Studies coral reefs. Did her first research project as a high school junior.', helps: ['Finding research', 'Science fair', 'Field work'] },
+  { id: 'tanaka', name: 'Kenji Tanaka', role: 'Financial analyst', field: 'Business & finance', years: 7, bio: 'Works on investments at a bank. Ran a small business selling custom stickers in high school.', helps: ['Business & finance', 'Starting a venture', 'DECA & comps'] },
+  { id: 'nguyen', name: 'Tom Nguyen', role: 'Founder of a youth nonprofit', field: 'Business & finance', years: 10, bio: 'Started a free tutoring program at 16 that now runs in 30 schools.', helps: ['Starting a nonprofit', 'Leadership', 'Fundraising'] },
+  { id: 'whitfield', name: 'Dana Whitfield', role: 'Public defender', field: 'Law & government', years: 15, bio: 'Represents people in court who can’t afford a lawyer. Debate kid turned lawyer.', helps: ['Law careers', 'Debate', 'Political science'] },
+  { id: 'lindqvist', name: 'Sofia Lindqvist', role: 'Illustrator & product designer', field: 'Arts & design', years: 9, bio: 'Moves between picture books and app design. Ask her how to build a portfolio.', helps: ['Building a portfolio', 'Art programs', 'Design careers'] },
+  { id: 'cole', name: 'Jasmine Cole', role: 'Career coach', field: 'Not sure yet', years: 13, bio: 'Helps students who don’t know what they want yet find a direction worth trying.', helps: ['Finding a passion', 'Exploring fields', 'Picking activities'] },
+].map(m => ({ ...m, first: m.name.replace('Dr. ', '').split(' ')[0], initials: m.name.replace('Dr. ', '').split(' ').map(w => w[0]).join('').slice(0, 2) }));
+const TIPS = [
+  { id: 'look', kicker: 'Admissions', title: 'What colleges actually look for', lead: 'Colleges weigh a few things much more than everything else. Knowing the order tells you where your time goes furthest.', points: [
+    { h: 'Grades in your core classes', b: 'This is the biggest factor by far. A steady record across all four years counts for more than one great semester.' },
+    { h: 'How hard your classes are', b: 'Honors, AP or IB when you’re ready. Colleges compare you with what your school offered, not with every school.' },
+    { h: 'SAT or ACT scores', b: 'Several colleges that went test-optional now require scores again. Check each school on your list.' },
+    { h: 'Essays, letters and activities', b: 'These come next. Colleges look for depth: what you stuck with, and what changed because you were there.' },
+  ], quote: 'What do colleges want to see in an applicant', quoteNote: 'The most common question in our survey, asked in some form by 8 students', cta: 'See how your plan stacks up', ctaTo: 'gf', source: 'Based on NACAC’s Factors in the Admission Decision.' },
+  { id: 'acts', kicker: 'Activities', title: 'Which activities are worth it', lead: 'There’s no list of “right” activities. What counts is how long you stayed, how far you went, and what you did with it.', points: [
+    { h: 'One or two, for years', b: 'Two long commitments say more than ten clubs you joined once.' },
+    { h: 'Room to grow', b: 'Look for a path from member to leader to starting something new.' },
+    { h: 'Results someone else can see', b: 'A placement, a performance, a finished project, people you helped.' },
+    { h: 'Middle school is for trying', b: 'Switching now is fine. Pick the thing you’d keep doing even if it didn’t go on an application.' },
+  ], quote: 'It mostly just matters when you’re really good at it so that you stand out from other people.', quoteNote: 'A student, in our survey', cta: 'Find your gateway moves', ctaTo: 'gf', source: '' },
+  { id: 'time', kicker: 'Planning', title: 'Time management and study plans', lead: 'Not having enough time was the top thing in the way for students in our survey. A simple weekly plan fixes more than willpower does.', points: [
+    { h: 'Plan the week on Sunday', b: 'Put fixed things in first (school, practice, family), then homework blocks, then everything else.' },
+    { h: 'Review a little every day', b: 'Twenty minutes of review each day beats a three-hour cram the night before.' },
+    { h: 'Choose what not to do', b: 'Like the budget in GapFinder, your hours are limited. Saying no to one thing is how you go deep on another.' },
+    { h: 'Protect your sleep', b: 'Tired studying takes longer and sticks less. Sleep is part of the plan.' },
+  ], quote: 'I don’t have enough time', quoteNote: 'The most common answer to “What’s getting in the way?”', cta: 'Plan your moves in GapFinder', ctaTo: 'gf', source: '' },
+  { id: 'np', kicker: 'Projects', title: 'Starting a nonprofit or passion project', lead: 'Colleges care about impact and commitment, not the word “nonprofit.” A small project that runs for two years can say more than an organization that only exists on paper.', points: [
+    { h: 'Start with a problem you’ve seen', b: 'Something in your school, your neighborhood, or a group you belong to.' },
+    { h: 'Run it small first', b: 'One event, one student you tutor, one app that solves one thing. Then grow it.' },
+    { h: 'Keep a record', b: 'Who you helped, what you learned, what you changed. That becomes your essay.' },
+    { h: 'You don’t need paperwork to start', b: 'Registering an official nonprofit takes forms and an adult. Most student projects don’t need it at first.' },
+  ], quote: 'How appealing is creating your own nonprofit organization?', quoteNote: 'A student, in our survey', cta: 'Talk to a nonprofit founder', ctaTo: 'nguyen', source: '' },
+];
+const lc = t => t.toLowerCase().replace('sat / act', 'SAT/ACT scores');
+const gradeStage = g => (g <= 8 ? 1 : g <= 10 ? 2 : 3);
+const ordinal = g => g + 'th grade';
+const YN = {
+  past: [{ id: 'y', label: 'Yes' }, { id: 'n', label: 'No' }],
+  now: [{ id: 'y', label: 'Yes' }, { id: 'soon', label: 'Not yet, but I will' }, { id: 'n', label: 'No' }],
+  will: [{ id: 'y', label: 'Yes, I plan to' }, { id: 'n', label: 'Probably not' }],
+};
+const FLOW = (() => {
+  const out = [];
+  QUESTIONS.forEach((q, i) => { out.push({ kind: 'q', q }); const nx = QUESTIONS[i + 1]; if (q.s >= 1 && q.s < 3 && (!nx || nx.s !== q.s)) out.push({ kind: 'recap', s: q.s }); });
+  out.push({ kind: 'results' });
+  return out;
+})();
+const QIDX = {}; FLOW.forEach((it, i) => { if (it.kind === 'q') QIDX[it.q.id] = i; });
+const deps = id => MOVES.filter(x => x.needs === id);
+const hrsText = (h, hl) => hl || (h === 0 ? 'Little extra time' : 'About ' + h + ' hrs a week');
+const needText = id => 'Needs ' + SHORT[id] + ' in ' + STAGES[BYID[id].s - 1].short + '.';
+const qFor = id => QUESTIONS.find(q => q.move === id || (q.options || []).some(o => o.moves.includes(id)));
+const meta = moves => {
+  const ms = moves.map(id => BYID[id]);
+  const h = ms.reduce((a, m) => a + m.h, 0), hl = ms.length === 1 ? ms[0].hl : null, nd = ms.find(m => m.needs);
+  return { h, hrsText: hrsText(h, hl), hrsShort: hl || (h > 0 ? h + ' hrs/wk' : ''), costs: ms.some(m => m.cost), needs: nd ? nd.needs : null, opens: MOVES.filter(x => moves.includes(x.needs)).map(x => x.title) };
+};
+const CV0 = { isQ: false, isRecap: false, title: '', help: '', hasHelp: false, showTense: false, tenseTag: '', tenseClass: 'tag-neutral', progressText: '', segs: [], showWeek: false, weekOver: false, hasQMeta: false, qHrs: '', qCosts: false, hasQOpens: false, qOpensText: '', isLocked: false, lockedText: '', isSelect: false, selectVal: '', cantSendSelect: true, hasTier: false, tierText: '', hasOptions: false, options: [], isMulti: false, cantContinue: true, multiNote: '', hasLockNotes: false, lockNotes: '', hasOpensLegend: false, recapKicker: '', opened: [], still: [], noOpened: false, hasStill: false, nextLabel: '' };
+
+class Component extends DCLogic {
+  state = (() => {
+    let sv = {};
+    try { sv = JSON.parse(localStorage.getItem('mbq-gf2') || '{}'); } catch (e) {}
+    return { screen: 'gf', ver: this.props.gfVersion ?? 'A', started: !!sv.started, pos: Math.min(sv.pos || 0, FLOW.length - 1), answers: sv.answers || {},
+      mFilter: 'All', dialog: null, msg: '', sent: {}, dialogSent: false, tip: 'look', toast: '' };
+  })();
+
+  componentDidUpdate() {
+    const s = this.state;
+    try { localStorage.setItem('mbq-gf2', JSON.stringify({ started: s.started, pos: s.pos, answers: s.answers })); } catch (e) {}
+    const key = s.screen + '|' + s.started + '|' + s.pos + '|' + s.ver;
+    if (this._k !== undefined && this._k !== key) {
+      const chat = s.screen === 'gf' && s.ver === 'B' && s.started && FLOW[s.pos].kind !== 'results';
+      if (chat) requestAnimationFrame(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      else window.scrollTo(0, 0);
+    }
+    this._k = key;
+  }
+  componentWillUnmount() { clearTimeout(this._adv); clearTimeout(this._tt); }
+
+  icon(paths, size = 18) {
+    return React.createElement('svg', { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.75, strokeLinecap: 'round', strokeLinejoin: 'round', style: { display: 'block', flex: 'none' } },
+      ...paths.map((p, i) => React.createElement(p[0], { key: i, ...p[1] })));
+  }
+  icons() {
+    if (this._icons) return this._icons;
+    const lock = [['rect', { x: 3, y: 11, width: 18, height: 11, rx: 2 }], ['path', { d: 'M7 11V7a5 5 0 0 1 10 0v4' }]];
+    const unlock = [['rect', { x: 3, y: 11, width: 18, height: 11, rx: 2 }], ['path', { d: 'M7 11V7a5 5 0 0 1 9.9-1' }]];
+    const hour = [['path', { d: 'M5 22h14' }], ['path', { d: 'M5 2h14' }], ['path', { d: 'M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22' }], ['path', { d: 'M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2' }]];
+    const coins = [['circle', { cx: 8, cy: 8, r: 6 }], ['path', { d: 'M18.09 10.37A6 6 0 1 1 10.34 18' }], ['path', { d: 'M7 6h1v4' }]];
+    this._icons = {
+      lock: this.icon(lock), lockSm: this.icon(lock, 12), unlock: this.icon(unlock), unlockSm: this.icon(unlock, 13),
+      hourglassSm: this.icon(hour, 13), coinsSm: this.icon(coins, 13),
+      shield: this.icon([['path', { d: 'M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z' }]]),
+      check: this.icon([['path', { d: 'M20 6 9 17l-5-5' }]], 14),
+      back: this.icon([['path', { d: 'm12 19-7-7 7-7' }], ['path', { d: 'M19 12H5' }]], 16),
+    };
+    return this._icons;
+  }
+  flash(toast) { clearTimeout(this._tt); this.setState({ toast }); this._tt = setTimeout(() => this.setState({ toast: '' }), 2800); }
+
+  picks(A) {
+    const P = {};
+    QUESTIONS.forEach(q => {
+      const a = A[q.id];
+      if (a == null || q.s === 0) return;
+      if (q.type === 'yn') { const m = BYID[q.move]; if (m.needs && !P[m.needs]) return; if (a === 'y' || a === 'soon') P[q.move] = true; return; }
+      [].concat(a).forEach(id => { const o = (q.options || []).find(x => x.id === id); if (!o) return; o.moves.forEach(mid => { const m = BYID[mid]; if (!m.needs || P[m.needs]) P[mid] = true; }); });
+    });
+    return P;
+  }
+  ctx() { const A = this.state.answers, grade = +(A.grade || 8); return { A, P: this.picks(A), grade, cur: gradeStage(grade), budget: +(A.hours || 8) }; }
+  hours(s, P) { return MOVES.filter(m => m.s === s && P[m.id]).reduce((a, m) => a + m.h, 0); }
+  tenseKey(s, cur) { return s === 0 ? 'now' : s < cur ? 'past' : s === 1 ? 'now' : 'will'; }
+  qText(q, cur) { const k = this.tenseKey(q.s, cur); return q.t[k] || q.t.will || q.t.now; }
+  tag(s, c) {
+    if (s === 0) return { tenseTag: 'About you', tenseClass: 'tag-neutral' };
+    const n = STAGES[s - 1].name;
+    return s < c.cur ? { tenseTag: 'Looking back · ' + n, tenseClass: 'tag-neutral' } : s === c.cur ? { tenseTag: 'You are here · ' + n, tenseClass: 'tag-accent' } : { tenseTag: 'Coming up · ' + n, tenseClass: 'tag-accent-2' };
+  }
+  lockedNeed(q, c) { if (q.type !== 'yn') return null; const m = BYID[q.move]; return m.needs && !c.P[m.needs] ? m.needs : null; }
+  lockedText(need) { return 'This needs ' + SHORT[need] + ' in ' + STAGES[BYID[need].s - 1].short + ', and your plan doesn’t have that yet.'; }
+  ansLabel(q, a, c) {
+    if (q.type === 'select') return a;
+    if (q.type === 'yn') { const o = YN[this.tenseKey(q.s, c.cur)].find(x => x.id === a); return o ? o.label : a === 'y' ? 'Yes' : a === 'soon' ? 'Not yet, but I will' : 'No'; }
+    return [].concat(a).map(id => (q.options.find(o => o.id === id) || {}).label).filter(Boolean).join(', ');
+  }
+
+  answer(q, id) {
+    const A = { ...this.state.answers };
+    if (q.type === 'multi') {
+      let cur = [].concat(A[q.id] || []);
+      if (id === 'none') cur = cur.includes('none') ? [] : ['none'];
+      else {
+        cur = cur.filter(x => x !== 'none');
+        if (cur.includes(id)) cur = cur.filter(x => x !== id);
+        else { if (cur.length >= (q.max || 2)) { this.flash('Pick up to two. Tap one to remove it first.'); return; } cur.push(id); }
+      }
+      A[q.id] = cur; this.setState({ answers: A }); return;
+    }
+    A[q.id] = id; this.setState({ answers: A });
+    clearTimeout(this._adv);
+    if (this.state.ver === 'A') this._adv = setTimeout(() => this.next(), 260); else this.next();
+  }
+  next() { this.setState(s => { let p = Math.min(s.pos + 1, FLOW.length - 1); if (s.ver === 'B' && FLOW[p].kind === 'recap') p = Math.min(p + 1, FLOW.length - 1); return { pos: p }; }); }
+  prev() { clearTimeout(this._adv); this.setState(s => (s.pos === 0 ? { started: false } : { pos: s.pos - 1 })); }
+  setPos(i) { clearTimeout(this._adv); this.setState({ pos: i, started: true }); }
+  goTo(moveId) { const q = qFor(moveId); if (q) this.setPos(QIDX[q.id]); }
+
+  week(s, c) {
+    const used = this.hours(s, c.P), b = c.budget, over = used > b;
+    return { showWeek: true, weekLabel: 'Your free time in ' + STAGES[s - 1].short, weekText: used + ' of ' + b + ' hrs a week', weekShort: used + ' / ' + b + ' hrs',
+      weekW: Math.min(100, Math.round(used / b * 100)) + '%', weekColor: over ? 'var(--color-accent)' : 'var(--color-accent-2)',
+      weekTextColor: over ? 'var(--color-accent-800)' : 'var(--color-neutral-800)', weekWeight: over ? 700 : 400, weekOver: over,
+      weekNote: 'Over by ' + (used - b) + ' hrs. Something would have to give.' };
+  }
+  segs() {
+    const pos = this.state.pos;
+    return [0, 1, 2, 3].map(g => {
+      const idx = FLOW.map((it, i) => ({ it, i })).filter(x => x.it.kind !== 'results' && (x.it.kind === 'q' ? x.it.q.s : x.it.s) === g);
+      return { w: Math.round(idx.filter(x => x.i < pos).length / idx.length * 100) + '%' };
+    });
+  }
+  recapInfo(s, c) {
+    const used = this.hours(s, c.P), b = c.budget;
+    const gws = MOVES.filter(m => m.s === s && deps(m.id).length);
+    const opened = gws.filter(g => c.P[g.id]).flatMap(g => deps(g.id).map(d => ({ title: d.title, when: 'Now possible in ' + STAGES[d.s - 1].short })));
+    const still = gws.filter(g => !c.P[g.id]).flatMap(g => deps(g.id).map(d => ({ title: d.title, need: 'Needs ' + SHORT[g.id] + ' now' })));
+    return { used, b, over: used > b, opened, still };
+  }
+
+  current(c) {
+    const icons = this.icons(), it = FLOW[this.state.pos];
+    if (it.kind === 'recap') {
+      const r = this.recapInfo(it.s, c);
+      return { ...CV0, isRecap: true, ...this.tag(it.s, c), ...this.week(it.s, c), segs: this.segs(), recapKicker: STAGES[it.s - 1].name + ' · done',
+        opened: r.opened, noOpened: !r.opened.length, still: r.still, hasStill: r.still.length > 0, nextLabel: 'Next: ' + STAGES[it.s].name, onNext: () => this.next() };
+    }
+    if (it.kind !== 'q') return { ...CV0 };
+    const q = it.q, ans = c.A[q.id], tk = this.tenseKey(q.s, c.cur), need = this.lockedNeed(q, c);
+    const list = QUESTIONS.filter(x => x.s === q.s);
+    const cv = { ...CV0, isQ: true, title: this.qText(q, c.cur), help: q.help || '', hasHelp: !!q.help, showTense: q.s > 0, ...this.tag(q.s, c), segs: this.segs(),
+      progressText: (q.s === 0 ? 'About you' : STAGES[q.s - 1].name) + ' · ' + (list.indexOf(q) + 1) + ' of ' + list.length };
+    if (q.s > 0) Object.assign(cv, this.week(q.s, c));
+    if (need) Object.assign(cv, { isLocked: true, lockedText: this.lockedText(need), lockFix: () => this.goTo(need), lockSkip: () => { this.setState(st => ({ answers: { ...st.answers, [q.id]: 'locked' } })); this.next(); } });
+    if (q.type === 'select') {
+      const col = COLLEGES.find(x => x.n === ans), t = col && TIERS[col.tier];
+      Object.assign(cv, { isSelect: true, selectVal: ans || '', cantSendSelect: !ans, sendSelect: () => this.next(),
+        onSelect: e => { const v = e.target.value; this.setState(st => ({ answers: { ...st.answers, college: v } })); },
+        hasTier: !!t, tierText: t ? (ans === 'Not sure yet' ? 'No problem. We’ll use a selective college as the bar for now.' : t.label + '. ' + t.note) : '' });
+      return cv;
+    }
+    if (need) return cv;
+    if (q.type === 'yn') { const m = meta([q.move]); Object.assign(cv, { hasQMeta: true, qHrs: m.hrsText, qCosts: m.costs, hasQOpens: m.opens.length > 0, qOpensText: m.opens.join(', ') }); }
+    const raw = q.type === 'yn' ? YN[tk] : q.options;
+    const selArr = [].concat(ans || []);
+    cv.options = raw.map(o => {
+      const moves = q.type === 'yn' ? [] : (o.moves || []), m = meta(moves);
+      const locked = !!(m.needs && !c.P[m.needs]);
+      const sel = q.type === 'multi' ? selArr.includes(o.id) : ans === o.id;
+      return { label: o.label, sel, locked, open: !locked, onClick: () => this.answer(q, o.id),
+        hasHrs: moves.length > 0, hrsText: m.hrsText, hrsShort: m.hrsShort, hasHrsShort: moves.length > 0 && !!m.hrsShort, costs: m.costs, hasMeta: moves.length > 0,
+        hasOpens: m.opens.length > 0, opensText: m.opens.join(', '), needText: locked ? needText(m.needs) : '', goNeed: () => locked && this.goTo(m.needs),
+        border: sel ? 'var(--color-accent)' : 'transparent', bg: sel ? 'var(--color-accent-100)' : 'var(--color-surface)',
+        checkBorder: sel ? 'var(--color-accent)' : 'var(--color-neutral-400)', checkBg: sel ? 'var(--color-accent)' : 'transparent', checkIcon: sel ? icons.check : null,
+        checkRadius: q.type === 'multi' ? '8px' : '50%', pillBorder: sel ? 'var(--color-accent)' : 'var(--color-neutral-300)', pillBg: sel ? 'var(--color-accent-100)' : 'var(--color-surface)' };
+    });
+    cv.hasOptions = true;
+    const lockedOpts = cv.options.filter(o => o.locked);
+    cv.hasLockNotes = lockedOpts.length > 0;
+    cv.lockNotes = lockedOpts.map(o => o.label + ': ' + o.needText.replace('Needs', 'needs')).join(' ');
+    cv.hasOpensLegend = cv.options.some(o => o.open && o.hasOpens) || cv.hasQOpens;
+    if (q.type === 'multi') { const n = selArr.filter(x => x !== 'none').length; Object.assign(cv, { isMulti: true, cantContinue: selArr.length === 0, onContinue: () => this.next(), multiNote: selArr.includes('none') ? '' : n + ' of ' + (q.max || 2) + ' picked' }); }
+    return cv;
+  }
+
+  thread(c, cv) {
+    const out = [{ guide: true, text: 'Hi! I’ll ask you 25 quick questions about school and what you do outside it.', sub: 'Tap any of your answers to change it.' }];
+    const g = (text, sub, sub2) => out.push({ guide: true, text, sub: sub || '', sub2: sub2 || '' });
+    const recapMsg = s => { const r = this.recapInfo(s, c); g('That’s ' + STAGES[s - 1].short + ' done. Your week came to ' + r.used + ' of ' + r.b + ' free hours' + (r.over ? ', ' + (r.used - r.b) + ' more than you have.' : '.'), r.still.length ? 'Still locked: ' + r.still.map(o => o.title).join(', ') + '.' : '', r.opened.length ? 'Opened for later: ' + r.opened.map(o => o.title).join(', ') + '.' : ''); };
+    const pos = this.state.pos;
+    for (let i = 0; i < pos; i++) {
+      const it = FLOW[i];
+      if (it.kind === 'recap') { recapMsg(it.s); continue; }
+      if (it.kind !== 'q') continue;
+      const q = it.q, a = c.A[q.id], need = this.lockedNeed(q, c);
+      if (need) { g(this.qText(q, c.cur), 'Closed. ' + this.lockedText(need)); continue; }
+      g(this.qText(q, c.cur));
+      if (a == null || a === 'locked' || (Array.isArray(a) && !a.length)) continue;
+      out.push({ me: true, text: this.ansLabel(q, a, c), onClick: () => this.setPos(i) });
+      if (q.id === 'college') { const col = COLLEGES.find(x => x.n === a), t = col && TIERS[col.tier]; if (t) g(a === 'Not sure yet' ? 'No problem. I’ll use a selective college as the bar for now.' : a + ' is ' + t.phrase + '. ' + t.note); continue; }
+      if (q.id === 'hours') { g('Got it. That’s your time budget for each stage.'); continue; }
+      if (a === 'soon') g('Nice. I’ll count that as a goal for this year.');
+      const mv = q.type === 'yn' ? ((a === 'y' || a === 'soon') ? [q.move] : []) : [].concat(a).map(id => q.options.find(o => o.id === id)).filter(Boolean).flatMap(o => o.moves);
+      const op = MOVES.filter(x => mv.filter(m => c.P[m]).includes(x.needs)).map(x => x.title);
+      if (op.length) g('That opens up later: ' + op.join(', ') + '.');
+    }
+    const it = FLOW[pos];
+    if (it.kind === 'recap') recapMsg(it.s);
+    else if (it.kind === 'q') {
+      const bits = cv.hasQMeta ? [cv.qHrs, cv.qCosts ? 'usually costs money' : ''].filter(Boolean).join(' · ') : '';
+      g(cv.title, [cv.help, bits].filter(Boolean).join(' '), cv.isLocked ? 'Closed. ' + cv.lockedText : cv.hasQOpens ? 'Opens up later: ' + cv.qOpensText : '');
+    }
+    out.forEach((m, i) => { const p = out[i - 1]; m.guide = !!m.guide; m.me = !!m.me; m.avatar = m.guide && !(p && p.guide); m.noAvatar = m.guide && !m.avatar; m.hasSub = !!m.sub; m.hasSub2 = !!m.sub2; m.gap = p && p.me && m.guide ? '8px' : '0px'; });
+    return out;
+  }
+
+  results(c) {
+    const P = c.P, A = c.A;
+    const col = COLLEGES.find(x => x.n === A.college) || COLLEGES[0], tier = TIERS[col.tier];
+    const pts = {};
+    MOVES.forEach(m => { if (P[m.id]) Object.entries(m.f).forEach(([k, v]) => { pts[k] = (pts[k] || 0) + v; }); });
+    const fac = FACTORS.map(f => ({ ...f, pct: Math.round(Math.min(1, (pts[f.k] || 0) / f.cap) * 100) }));
+    const score = Math.round(fac.reduce((a, f) => a + f.w * f.pct, 0));
+    const gaps = fac.filter(f => f.pct < tier.bar).sort((a, b) => b.w * (tier.bar - b.pct) - a.w * (tier.bar - a.pct)).slice(0, 3);
+    const over = [1, 2, 3].filter(s => this.hours(s, P) > c.budget).map(s => ({ label: 'Your ' + STAGES[s - 1].short + ' plan needs more time than you have', fix: 'It adds up to ' + this.hours(s, P) + ' hrs a week against your ' + c.budget + '. Drop one thing, or burnout gets likely.' }));
+    const risks = over.concat(RISKS.filter(r => !MOVES.some(m => m.risk === r.k && P[m.id])));
+    const closed = MOVES.filter(m => m.needs && !P[m.needs]).map(m => { const gw = BYID[m.needs]; return { title: m.title, why: 'Needed ' + SHORT[gw.id] + ' in ' + STAGES[gw.s - 1].short + '.' }; });
+    const gapKeys = gaps.map(x => x.k);
+    const steps = MOVES.filter(m => !P[m.id] && m.s >= c.cur && !(m.needs && !P[m.needs]) && gapKeys.some(k => m.f[k]))
+      .sort((a, b) => a.s - b.s || gapKeys.findIndex(k => b.f[k]) - gapKeys.findIndex(k => a.f[k])).slice(0, 4)
+      .map(m => ({ title: m.title, when: m.s === c.cur ? 'Now' : STAGES[m.s - 1].range, whenClass: m.s === c.cur ? 'tag-accent' : 'tag-neutral', helps: FACTORS.filter(f => m.f[f.k] && gapKeys.includes(f.k)).map(f => lc(f.label)).join(' and ') }));
+    const field = A.field || 'Not sure yet';
+    const mentor = MENTORS.find(m => m.field === field) || MENTORS[MENTORS.length - 1];
+    return { col, tier, fac, score, gaps, risks, closed, steps, mentor, field, on: score >= tier.bar };
+  }
+
+  openMentor(m, fromResults) {
+    const s = this.state, A = s.answers, grade = A.grade || '8', field = A.field || 'Not sure yet';
+    let msg = 'Hi ' + m.first + ', I’m in ' + ordinal(grade) + ' and I’m curious about ' + (field === 'Not sure yet' ? 'a few different fields' : field.toLowerCase()) + '. What do you wish you’d known at my age?';
+    if (fromResults) { const r = this.results(this.ctx()); if (r.gaps.length) msg = 'Hi ' + m.first + ', I’m in ' + ordinal(grade) + ' and aiming for ' + r.col.n + '. GapFinder says my biggest gaps are ' + r.gaps.map(x => lc(x.label)).join(', ') + '. How would you work on that at my age?'; }
+    this.setState({ screen: fromResults ? s.screen : 'mentors', dialog: m.id, msg, dialogSent: false });
+  }
+
+  renderVals() {
+    const s = this.state, icons = this.icons(), c = this.ctx();
+    const go = (screen, extra) => e => { if (e && e.preventDefault) e.preventDefault(); this.setState({ screen, dialog: null, ...(extra || {}) }); };
+    const item = FLOW[s.pos], isGF = s.screen === 'gf';
+    const cv = this.current(c);
+    let r = {};
+    if (isGF && s.started && item.kind === 'results') {
+      const R = this.results(c), gl = R.gaps.map(x => lc(x.label));
+      r = { collegeName: R.col.n, score: R.score, bar: R.tier.bar, scoreW: R.score + '%', barW: R.tier.bar + '%', tierLabelLower: R.tier.label.toLowerCase(),
+        scoreColor: R.on ? 'var(--color-accent-2-700)' : 'var(--color-accent-700)',
+        headline: R.on ? (R.gaps.length ? 'On track for ' + R.col.n + ', with gaps to watch' : 'Your plan clears the bar for ' + R.col.n) : 'A few gaps to close for ' + R.col.n,
+        summary: R.on ? 'Your plan clears the bar for ' + R.tier.label.toLowerCase() + ' colleges.' + (gl.length ? ' Your weakest areas are ' + gl.join(', ') + '.' : '') + ' A strong plan makes a strong application possible. It never guarantees admission.'
+          : 'Your plan scores ' + R.score + ', below the ' + R.tier.bar + ' bar for ' + R.tier.label.toLowerCase() + ' colleges. The biggest shortfalls are in ' + gl.join(', ') + '. Most are fixable from where you are now.',
+        factors: R.fac.map(f => ({ label: f.label, pctText: f.pct + '%', w: Math.max(f.pct, 2) + '%', color: f.pct < R.tier.bar ? 'var(--color-accent)' : 'var(--color-accent-2)' })),
+        gaps: R.gaps.map((x, i) => ({ rank: i + 1, label: x.label, fix: x.fix })), noGaps: R.gaps.length === 0,
+        risks: R.risks, noRisks: R.risks.length === 0, closed: R.closed, noClosed: R.closed.length === 0,
+        steps: R.steps, noSteps: R.steps.length === 0, gradeLabel: ordinal(c.grade), mentor: R.mentor,
+        mentorWhy: R.mentor.first + ' works in ' + (R.field === 'Not sure yet' ? 'helping students find a direction' : R.field.toLowerCase()) + ' and can tell you which of these gaps matter most in that field.',
+        askMentor: () => this.openMentor(R.mentor, true) };
+    }
+    const dm = MENTORS.find(m => m.id === s.dialog), tip = TIPS.find(t => t.id === s.tip);
+    return {
+      icons, isHome: s.screen === 'home', isGF, isMentors: s.screen === 'mentors', isTips: s.screen === 'tips',
+      navGF: isGF ? 'page' : undefined, navMentors: s.screen === 'mentors' ? 'page' : undefined, navTips: s.screen === 'tips' ? 'page' : undefined,
+      goHome: e => { if (e && e.preventDefault) e.preventDefault(); clearTimeout(this._adv); this.setState({ started: false }); }, goGF: go('gf'), goMentors: go('mentors'), goTips: go('tips'),
+      verOpts: [['A', 'A · One question at a time'], ['B', 'B · Chat']].map(([v, label]) => { const a = s.ver === v; return { label, onClick: () => this.setState(st => ({ ver: v, pos: v === 'B' && FLOW[st.pos].kind === 'recap' ? st.pos + 1 : st.pos })), bg: a ? 'var(--color-text)' : 'transparent', color: a ? 'var(--color-bg)' : 'var(--color-text)', border: a ? 'var(--color-text)' : 'var(--color-divider)' }; }),
+      gfIntro: isGF && !s.started, gfResults: isGF && s.started && item.kind === 'results',
+      aQ: isGF && s.started && s.ver === 'A' && item.kind === 'q', aRecap: isGF && s.started && s.ver === 'A' && item.kind === 'recap',
+      bChat: isGF && s.started && s.ver === 'B' && item.kind !== 'results',
+      hasProgress: s.pos > 0, startLabel: s.pos > 0 ? 'Continue where I left off' : 'Start',
+      startGF: () => this.setState({ started: true }), resetGF: () => this.setState({ started: false, pos: 0, answers: {} }),
+      prev: () => this.prev(), cv, thread: isGF && s.ver === 'B' && s.started ? this.thread(c, cv) : [],
+      collegeOptions: COLLEGES, r, editPlan: () => this.setPos(QIDX[QUESTIONS.find(q => q.s === c.cur).id]),
+      filters: ['All', ...FIELDS].map(f => { const a = s.mFilter === f; return { label: f, onClick: () => this.setState({ mFilter: f }), bg: a ? 'var(--color-text)' : 'transparent', color: a ? 'var(--color-bg)' : 'var(--color-text)', border: a ? 'var(--color-text)' : 'var(--color-divider)' }; }),
+      mentorCards: MENTORS.filter(m => s.mFilter === 'All' || m.field === s.mFilter).map((m, i) => ({ ...m, avatarBg: i % 2 ? 'var(--color-accent)' : 'var(--color-accent-2)',
+        sent: !!s.sent[m.id], btnLabel: s.sent[m.id] ? 'Request sent' : 'Ask for a chat', btnClass: s.sent[m.id] ? 'btn-secondary' : 'btn-primary', onAsk: () => this.openMentor(m, false) })),
+      dialogOpen: !!dm, dialogForm: !!dm && !s.dialogSent, dialogSent: !!dm && s.dialogSent, dm: dm || {}, msg: s.msg,
+      onMsg: e => this.setState({ msg: e.target.value }), cantSend: !s.msg.trim(),
+      closeDialog: () => this.setState({ dialog: null }), stop: e => e.stopPropagation(),
+      sendRequest: () => this.setState(st => ({ sent: { ...st.sent, [st.dialog]: true }, dialogSent: true })),
+      tipNav: TIPS.map((t, i) => { const a = t.id === s.tip; return { title: t.title, num: i + 1, onClick: () => this.setState({ tip: t.id }), bg: a ? 'var(--color-surface)' : 'transparent', color: 'var(--color-text)', numBg: a ? 'var(--color-accent)' : 'var(--color-neutral-200)', numColor: a ? 'var(--color-bg)' : 'var(--color-text)' }; }),
+      tip: { ...tip, points: tip.points.map((p, i) => ({ ...p, n: i + 1 })), onCta: tip.ctaTo === 'gf' ? go('gf') : () => this.openMentor(MENTORS.find(m => m.id === tip.ctaTo), false) },
+      hasToast: !!s.toast, toast: s.toast,
+    };
+  }
+}
+</script>
+</body>
+</html>
