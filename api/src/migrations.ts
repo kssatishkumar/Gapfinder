@@ -68,4 +68,9 @@ export const MIGRATIONS: { id: string; sql: string }[] = [
       ${MENTOR_SEED.map((m, i) => `(${[m.id, m.name, m.role, m.field].map(esc).join(', ')}, ${m.years}, ${esc(m.bio)}, ARRAY[${m.helps.map(esc).join(', ')}]::text[], ${i})`).join(',\n      ')};
     `,
   },
+  {
+    // The chat-style quiz (variant B) and the A/B split were removed; every quiz is one question per page.
+    id: '002_drop_quiz_variant',
+    sql: `ALTER TABLE quiz_sessions DROP COLUMN variant;`,
+  },
 ];

@@ -19,12 +19,10 @@ Students don't sign up. Each browser gets a random anonymous id, and the quiz au
 
 | Table | Holds |
 | --- | --- |
-| `quiz_sessions` | Answers, grade, which quiz variant (A = one question per page, B = chat), and a gap summary scored on the server |
+| `quiz_sessions` | Answers, grade, and a gap summary scored on the server |
 | `feedback` | The post-quiz feedback form |
 | `mentors` | The 10 mentors (seeded from `shared/src/mentors.ts`) |
 | `mentor_requests` | Chat requests, with the parent or guardian's email, the only personal data collected |
-
-The A/B variant is picked at random per browser. Add `?v=A` or `?v=B` to the GapFinder URL to force one.
 
 ## Run it locally
 

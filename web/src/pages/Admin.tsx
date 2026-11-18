@@ -7,14 +7,14 @@ const areaTitle = (k: string | null) => AREAS.find(a => a.k === k)?.title ?? '�
 const when = (s: string | null) => (s ? new Date(s).toLocaleString() : '—');
 
 interface Summary {
-  sessions: { started: number; completed: number; variant_a: number; variant_b: number; completed_a: number; completed_b: number };
+  sessions: { started: number; completed: number };
   areas: { area: string; gap: number; partly: number; covered: number }[];
   feedback: { rating: string; n: number }[];
   requests: { status: string; n: number }[];
 }
 interface Req { id: string; mentor_name: string; grade: number | null; message: string; parent_email: string; status: string; created_at: string }
 interface Fb { id: string; rating: string; useful: string | null; wrong: string; wish: string; created_at: string }
-interface Sess { id: string; variant: string; grade: number | null; pos: number; summary: { gapCount: number; partlyCount: number; coveredCount: number } | null; completed_at: string | null; created_at: string }
+interface Sess { id: string; grade: number | null; pos: number; summary: { gapCount: number; partlyCount: number; coveredCount: number } | null; completed_at: string | null; created_at: string }
 
 const TABS = ['Overview', 'Mentor requests', 'Feedback', 'Quiz sessions'] as const;
 
@@ -133,7 +133,6 @@ function Overview({ token, onAuthFail }: P) {
   const s = data.sessions;
   const tiles = [
     ['Quizzes started', s.started], ['Quizzes finished', s.completed],
-    ['Variant A finished', s.variant_a ? `${s.completed_a} of ${s.variant_a}` : '—'], ['Variant B finished', s.variant_b ? `${s.completed_b} of ${s.variant_b}` : '—'],
     ['Feedback', data.feedback.reduce((a, f) => a + f.n, 0)], ['New mentor requests', data.requests.find(r => r.status === 'new')?.n ?? 0],
   ];
   return (
@@ -203,9 +202,9 @@ function Sessions({ token, onAuthFail }: P) {
   return (
     <div className="card scroll-x" style={{ padding: 22 }}>
       <table className="table admin-table">
-        <thead><tr><th>Started</th><th>Variant</th><th>Grade</th><th>Progress</th><th>Gaps / partly / covered</th></tr></thead>
+        <thead><tr><th>Started</th><th>Grade</th><th>Progress</th><th>Gaps / partly / covered</th></tr></thead>
         <tbody>{data.map(s => (
-          <tr key={s.id}><td>{when(s.created_at)}</td><td>{s.variant}</td><td>{s.grade ?? '—'}</td>
+          <tr key={s.id}><td>{when(s.created_at)}</td><td>{s.grade ?? '—'}</td>
             <td>{s.completed_at ? 'Finished' : `Question ${Math.min(s.pos + 1, 9)} of 9`}</td>
             <td>{s.summary ? `${s.summary.gapCount} / ${s.summary.partlyCount} / ${s.summary.coveredCount}` : '—'}</td></tr>
         ))}</tbody>

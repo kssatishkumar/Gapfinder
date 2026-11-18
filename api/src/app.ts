@@ -38,13 +38,13 @@ export function buildApp(opts: { logger?: boolean; verifyAdmin?: AdminVerifier }
     const summary = summarize(answers);
     const completed = body.completed && body.pos >= QUESTION_COUNT;
     const { rowCount } = await query(
-      `INSERT INTO quiz_sessions (id, client_id, variant, grade, answers, summary, pos, completed_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, CASE WHEN $8::boolean THEN now() END)
+      `INSERT INTO quiz_sessions (id, client_id, grade, answers, summary, pos, completed_at)
+       VALUES ($1, $2, $3, $4, $5, $6, CASE WHEN $7::boolean THEN now() END)
        ON CONFLICT (id) DO UPDATE SET
          grade = EXCLUDED.grade, answers = EXCLUDED.answers, summary = EXCLUDED.summary, pos = EXCLUDED.pos,
          completed_at = COALESCE(quiz_sessions.completed_at, EXCLUDED.completed_at), updated_at = now()
        WHERE quiz_sessions.client_id = EXCLUDED.client_id`,
-      [id, body.clientId, body.variant, summary.grade, answers, summary, Math.min(body.pos, QUESTION_COUNT), completed],
+      [id, body.clientId, summary.grade, answers, summary, Math.min(body.pos, QUESTION_COUNT), completed],
     );
     if (!rowCount) return reply.code(403).send({ error: 'This session belongs to someone else' });
     return { id, summary };
@@ -90,10 +90,7 @@ export function buildApp(opts: { logger?: boolean; verifyAdmin?: AdminVerifier }
 
     admin.get('/api/admin/summary', async () => {
       const [s, areas, fb, mr] = await Promise.all([
-        query(`SELECT count(*)::int AS started, count(completed_at)::int AS completed,
-                 count(*) FILTER (WHERE variant = 'A')::int AS variant_a, count(*) FILTER (WHERE variant = 'B')::int AS variant_b,
-                 count(completed_at) FILTER (WHERE variant = 'A')::int AS completed_a, count(completed_at) FILTER (WHERE variant = 'B')::int AS completed_b
-               FROM quiz_sessions`),
+        query(`SELECT count(*)::int AS started, count(completed_at)::int AS completed FROM quiz_sessions`),
         query(`SELECT k AS area, count(*) FILTER (WHERE v = 'gap')::int AS gap, count(*) FILTER (WHERE v = 'partly')::int AS partly,
                  count(*) FILTER (WHERE v = 'covered')::int AS covered
                FROM quiz_sessions, jsonb_each_text(summary->'statuses') AS e(k, v)
@@ -105,7 +102,7 @@ export function buildApp(opts: { logger?: boolean; verifyAdmin?: AdminVerifier }
     });
 
     admin.get('/api/admin/sessions', async () => {
-      const { rows } = await query(`SELECT id, variant, grade, answers, summary, pos, completed_at, created_at FROM quiz_sessions ORDER BY created_at DESC LIMIT 200`);
+      const { rows } = await query(`SELECT id, grade, answers, summary, pos, completed_at, created_at FROM quiz_sessions ORDER BY created_at DESC LIMIT 200`);
       return rows;
     });
 

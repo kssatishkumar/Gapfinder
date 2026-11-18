@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AREAS, QUESTIONS, QUESTION_COUNT, TEXT_MAX, RATINGS, answerLabel, isHighSchool, summarize, type Answers, type Question } from '@mbq/shared';
 import { useQuiz } from '../lib/quizState';
-import { clientId, variant } from '../lib/storage';
+import { clientId } from '../lib/storage';
 import { api } from '../lib/api';
 import { Icon } from '../components/Icon';
 
@@ -14,24 +14,21 @@ export function GapFinder() {
   const adv = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => () => clearTimeout(adv.current), []);
 
-  // Keep the view at the top between screens; the chat variant follows the newest message instead.
-  useEffect(() => {
-    if (variant === 'B' && quiz.started && !quiz.done) window.scrollTo(0, document.documentElement.scrollHeight);
-    else window.scrollTo(0, 0);
-  }, [quiz.started, quiz.pos, quiz.done, fb]);
+  // Keep the view at the top between screens.
+  useEffect(() => { window.scrollTo(0, 0); }, [quiz.started, quiz.pos, quiz.done, fb]);
 
+  // Show the picked answer for a moment, then move to the next question.
   const answer = (q: Question, id: string) => {
     quiz.update(p => ({ answers: { ...p.answers, [q.id]: id } }));
     clearTimeout(adv.current);
-    const go = () => quiz.update(p => ({ pos: Math.min(p.pos + 1, QUESTION_COUNT) }));
-    if (variant === 'A') adv.current = setTimeout(go, 260); else go();
+    adv.current = setTimeout(() => quiz.update(p => ({ pos: Math.min(p.pos + 1, QUESTION_COUNT) })), 260);
   };
   const setPos = (i: number) => { clearTimeout(adv.current); setFb(null); quiz.update({ pos: i, started: true }); };
   const restart = () => { clearTimeout(adv.current); setFb(null); quiz.reset(); };
 
   let body;
   if (!quiz.started) body = <Intro quiz={quiz} onRestart={restart} />;
-  else if (!quiz.done) body = variant === 'A' ? <QuizPaged quiz={quiz} onAnswer={answer} /> : <QuizChat quiz={quiz} onAnswer={answer} onJump={setPos} />;
+  else if (!quiz.done) body = <QuizPaged quiz={quiz} onAnswer={answer} />;
   else if (fb === 'form') body = <FeedbackForm quiz={quiz} onClose={() => setFb(null)} onSent={() => setFb('sent')} />;
   else if (fb === 'sent') body = <FeedbackSent onClose={() => setFb(null)} onRestart={restart} />;
   else body = <Results answers={quiz.answers} onFeedback={() => setFb('form')} onEdit={() => setPos(0)} onRestart={restart} />;
@@ -82,16 +79,16 @@ function Intro({ quiz, onRestart }: { quiz: Quiz; onRestart: () => void }) {
   );
 }
 
-function TextInput({ q, answers, update, compact }: { q: Question; answers: Answers; update: Quiz['update']; compact?: boolean }) {
+function TextInput({ q, answers, update }: { q: Question; answers: Answers; update: Quiz['update'] }) {
   if (!q.text) return null;
-  const input = (
-    <input className="input" value={answers[q.id + '_text'] || ''} maxLength={TEXT_MAX}
-      placeholder={compact ? q.text.label + ' ' + q.text.ph : q.text.ph}
-      aria-label={q.text.label}
-      onChange={e => { const v = e.target.value; update(p => ({ answers: { ...p.answers, [q.id + '_text']: v } })); }}
-      style={compact ? { flex: '1 1 100%', minHeight: 48, fontSize: 15 } : { minHeight: 52, fontSize: 16 }} />
+  return (
+    <div className="field">
+      <label htmlFor={'text-' + q.id}>{q.text.label} (optional)</label>
+      <input id={'text-' + q.id} className="input" value={answers[q.id + '_text'] || ''} maxLength={TEXT_MAX} placeholder={q.text.ph}
+        onChange={e => { const v = e.target.value; update(p => ({ answers: { ...p.answers, [q.id + '_text']: v } })); }}
+        style={{ minHeight: 52, fontSize: 16 }} />
+    </div>
   );
-  return compact ? input : <div className="field"><label>{q.text.label} (optional)</label>{input}</div>;
 }
 
 function QuizPaged({ quiz, onAnswer }: { quiz: Quiz; onAnswer: (q: Question, id: string) => void }) {
@@ -116,47 +113,6 @@ function QuizPaged({ quiz, onAnswer }: { quiz: Quiz; onAnswer: (q: Question, id:
             <span className="opt-label">{o.label}</span>
           </button>
         ))}
-      </div>
-    </section>
-  );
-}
-
-function QuizChat({ quiz, onAnswer, onJump }: { quiz: Quiz; onAnswer: (q: Question, id: string) => void; onJump: (i: number) => void }) {
-  const q = QUESTIONS[quiz.pos];
-  type Msg = { guide?: boolean; text: string; sub?: string; jump?: number };
-  const msgs: Msg[] = [{ guide: true, text: 'Hi! I’ll ask you ' + QUESTION_COUNT + ' quick questions about school and what you do outside it.', sub: 'Tap any of your answers to change it.' }];
-  for (let i = 0; i < quiz.pos; i++) {
-    const qi = QUESTIONS[i];
-    msgs.push({ guide: true, text: qi.title });
-    if (quiz.answers[qi.id]) msgs.push({ text: answerLabel(qi.id, quiz.answers), jump: i });
-  }
-  msgs.push({ guide: true, text: q.title, sub: q.help });
-
-  return (
-    <section className="stack mw-680">
-      <div className="chat-bar chat-top">
-        <span style={{ fontFamily: 'var(--font-heading)', fontSize: 18 }}>GapFinder</span>
-        <span className="ml-auto small muted">Question {quiz.pos + 1} of {QUESTION_COUNT}</span>
-      </div>
-      <div className="stack gap-8" style={{ padding: '18px 0 20px' }} aria-live="polite">
-        {msgs.map((m, i) => {
-          const p = msgs[i - 1];
-          if (!m.guide) return <button key={i} className="bubble-me" title="Tap to change this answer" onClick={() => onJump(m.jump!)}>{m.text}</button>;
-          const avatar = !(p && p.guide);
-          return (
-            <div key={i} className="msg-guide" style={{ marginTop: p && !p.guide ? 8 : 0 }}>
-              {avatar ? <span className="avatar-q" aria-hidden="true">Q</span> : <span style={{ flex: 'none', width: 32 }} />}
-              <div className="bubble">
-                <span style={{ fontSize: 16, lineHeight: 1.4 }}>{m.text}</span>
-                {m.sub && <span className="small muted">{m.sub}</span>}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      <div className="chat-bar chat-bottom">
-        <TextInput q={q} answers={quiz.answers} update={quiz.update} compact />
-        {q.options.map(o => <button key={o.id} className="pill" aria-pressed={quiz.answers[q.id] === o.id} onClick={() => onAnswer(q, o.id)}>{o.label}</button>)}
       </div>
     </section>
   );

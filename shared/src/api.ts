@@ -7,7 +7,6 @@ const uuid = z.string().uuid();
 
 export const SessionUpsert = z.object({
   clientId: uuid,
-  variant: z.enum(['A', 'B']),
   answers: z.record(z.string(), z.unknown()),
   pos: z.number().int().min(0).max(50),
   completed: z.boolean(),

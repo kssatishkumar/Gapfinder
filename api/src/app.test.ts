@@ -36,9 +36,9 @@ test('health and mentors', async () => {
 });
 
 test('session autosave: create, update, complete, scored on the server', async () => {
-  let res = await put(sessionId, { clientId, variant: 'B', answers: { grade: '10', rigor: 'a2' }, pos: 2, completed: false });
+  let res = await put(sessionId, { clientId, answers: { grade: '10', rigor: 'a2' }, pos: 2, completed: false });
   assert.equal(res.statusCode, 200);
-  res = await put(sessionId, { clientId, variant: 'B', answers: { grade: '10', rigor: 'a2', depth: 'a3', depth_text: 'chess', evil: 'x' }, pos: 9, completed: true });
+  res = await put(sessionId, { clientId, answers: { grade: '10', rigor: 'a2', depth: 'a3', depth_text: 'chess', evil: 'x' }, pos: 9, completed: true });
   assert.equal(res.statusCode, 200);
   assert.equal(res.json().summary.coveredCount, 2);
   const { rows } = await query('SELECT grade, answers, completed_at FROM quiz_sessions WHERE id = $1', [sessionId]);
@@ -48,13 +48,13 @@ test('session autosave: create, update, complete, scored on the server', async (
 });
 
 test('another client cannot overwrite a session', async () => {
-  const res = await put(sessionId, { clientId: randomUUID(), variant: 'A', answers: {}, pos: 0, completed: false });
+  const res = await put(sessionId, { clientId: randomUUID(), answers: {}, pos: 0, completed: false });
   assert.equal(res.statusCode, 403);
 });
 
 test('bad input is rejected with 400', async () => {
-  assert.equal((await put('not-a-uuid', { clientId, variant: 'A', answers: {}, pos: 0, completed: false })).statusCode, 400);
-  assert.equal((await put(randomUUID(), { clientId, variant: 'C', answers: {}, pos: 0, completed: false })).statusCode, 400);
+  assert.equal((await put('not-a-uuid', { clientId, answers: {}, pos: 0, completed: false })).statusCode, 400);
+  assert.equal((await put(randomUUID(), { clientId, answers: 'nope', pos: 0, completed: false })).statusCode, 400);
 });
 
 test('feedback links to the session only for its owner', async () => {

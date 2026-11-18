@@ -2,7 +2,6 @@
 // Shared by the web app (to render) and the API (to score what gets stored).
 
 export type Status = 'gap' | 'partly' | 'covered';
-export type Variant = 'A' | 'B';
 export type Answers = Record<string, string>;
 
 export interface Want { t: string; src: string }
