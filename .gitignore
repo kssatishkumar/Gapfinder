@@ -1,0 +1,8 @@
+node_modules/
+dist/
+cdk.out/
+.local/
+*.log
+.env
+.env.*
+!.env.example

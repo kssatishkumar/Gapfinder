@@ -1,0 +1,25 @@
+{
+  "name": "my-big-quest",
+  "private": true,
+  "workspaces": [
+    "shared",
+    "api",
+    "web",
+    "infra"
+  ],
+  "scripts": {
+    "db:start": "node scripts/devdb.mjs start",
+    "db:stop": "node scripts/devdb.mjs stop",
+    "db:migrate": "npm run migrate -w api",
+    "dev:api": "npm run dev -w api",
+    "dev:web": "npm run dev -w web",
+    "build": "npm run build -w web && npm run typecheck -w api",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3"
+  }
+}
