@@ -18,7 +18,7 @@ export function Layout() {
       <Outlet />
       <footer className="wrap footer">
         <span style={{ fontFamily: 'var(--font-heading)', fontSize: 16, color: 'var(--color-text)' }}>My Big Quest</span>
-        <span>Built from a survey of 28 students in grades 7–9.</span>
+        {pathname === '/' && <span>Built from a survey of 28 students in grades 7–9.</span>}
         <span className="footer-note">No sign-up. Quiz answers are stored without your name.</span>
       </footer>
     </div>
