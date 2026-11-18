@@ -2,10 +2,19 @@
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
+import type { FastifyRequest } from 'fastify';
 import { buildApp } from './app';
 import { query, closePool } from './db';
+import { defaultVerifier, parseGroups, type AdminIdentity } from './auth';
 
-const app = buildApp();
+// Stand-in for Cognito: the bearer token names who is calling.
+const PEOPLE: Record<string, AdminIdentity> = {
+  admin: { sub: '1', email: 'admin@example.com', groups: ['admins'] },
+  staff: { sub: '2', email: 'staff@example.com', groups: [] },
+};
+const fakeVerifier = async (req: FastifyRequest) => PEOPLE[(req.headers.authorization ?? '').replace('Bearer ', '')] ?? null;
+
+const app = buildApp({ verifyAdmin: fakeVerifier });
 const clientId = randomUUID();
 const sessionId = randomUUID();
 
@@ -72,12 +81,16 @@ test('mentor request needs a valid parent email and a real mentor', async () => 
   assert.deepEqual(rows[0], { parent_email: 'parent@example.com', status: 'new' });
 });
 
-test('admin routes need a token', async () => {
+test('admin routes: 401 when signed out, 403 outside the admins group', async () => {
   assert.equal((await app.inject('/api/admin/summary')).statusCode, 401);
-  assert.equal((await app.inject({ method: 'POST', url: '/api/admin/login', payload: { password: 'wrong' } })).statusCode, 401);
-  const login = await app.inject({ method: 'POST', url: '/api/admin/login', payload: { password: process.env.ADMIN_PASSWORD } });
-  assert.equal(login.statusCode, 200);
-  const auth = { authorization: 'Bearer ' + login.json().token };
+  assert.equal((await app.inject({ url: '/api/admin/summary', headers: { authorization: 'Bearer nobody' } })).statusCode, 401);
+  assert.equal((await app.inject({ url: '/api/admin/summary', headers: { authorization: 'Bearer staff' } })).statusCode, 403);
+  assert.equal((await app.inject({ method: 'PATCH', url: '/api/admin/requests/' + randomUUID(), headers: { authorization: 'Bearer staff' }, payload: { status: 'closed' } })).statusCode, 403);
+});
+
+test('admin routes work for an admin', async () => {
+  const auth = { authorization: 'Bearer admin' };
+  assert.deepEqual((await app.inject({ url: '/api/admin/me', headers: auth })).json(), { email: 'admin@example.com' });
   const sum = await app.inject({ url: '/api/admin/summary', headers: auth });
   assert.equal(sum.statusCode, 200);
   assert.ok(sum.json().sessions.completed >= 1);
@@ -85,4 +98,26 @@ test('admin routes need a token', async () => {
   const mine = reqs.find((r: { message: string }) => r.message === 'Hi Marcus');
   const patch = await app.inject({ method: 'PATCH', url: '/api/admin/requests/' + mine.id, headers: auth, payload: { status: 'contacted' } });
   assert.equal(patch.statusCode, 200);
+});
+
+test('parseGroups reads API Gateway and plain array formats', () => {
+  assert.deepEqual(parseGroups('[admins editors]'), ['admins', 'editors']);
+  assert.deepEqual(parseGroups(['admins']), ['admins']);
+  assert.deepEqual(parseGroups(undefined), []);
+});
+
+test('in Lambda: trusts only authorizer claims for this app client, never the dev bypass', async () => {
+  const saved = { ...process.env };
+  try {
+    Object.assign(process.env, { AWS_LAMBDA_FUNCTION_NAME: 'test', COGNITO_CLIENT_ID: 'client-1', ADMIN_DEV_BYPASS: 'true' });
+    const req = (claims?: Record<string, unknown>) =>
+      ({ headers: {}, awsLambda: { event: { requestContext: { authorizer: claims ? { jwt: { claims } } : undefined } } } }) as unknown as FastifyRequest;
+    assert.equal(await defaultVerifier(req()), null, 'no claims, and the bypass must not apply in Lambda');
+    assert.equal(await defaultVerifier(req({ sub: 'x', token_use: 'access', client_id: 'other' })), null, 'token for another app client');
+    assert.equal(await defaultVerifier(req({ sub: 'x', token_use: 'id', client_id: 'client-1' })), null, 'id token instead of access token');
+    const ok = await defaultVerifier(req({ sub: 'x', token_use: 'access', client_id: 'client-1', username: 'u1', 'cognito:groups': '[admins]' }));
+    assert.deepEqual(ok, { sub: 'x', email: 'u1', groups: ['admins'] });
+  } finally {
+    process.env = saved;
+  }
 });

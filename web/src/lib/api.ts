@@ -21,7 +21,7 @@ export const api = {
   sendFeedback: (b: FeedbackCreate) => call<{ id: string }>('POST', '/feedback', b),
   requestMentor: (b: MentorRequestCreate) => call<{ id: string }>('POST', '/mentor-requests', b),
   admin: {
-    login: (password: string) => call<{ token: string }>('POST', '/admin/login', { password }),
+    me: (token: string) => call<{ email: string | null }>('GET', '/admin/me', undefined, token),
     get: <T>(path: string, token: string) => call<T>('GET', '/admin/' + path, undefined, token),
     setRequestStatus: (id: string, status: string, token: string) => call('PATCH', '/admin/requests/' + id, { status }, token),
   },

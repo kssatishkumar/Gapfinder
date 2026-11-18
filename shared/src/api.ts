@@ -34,6 +34,4 @@ export const MentorRequestCreate = z.object({
 });
 export type MentorRequestCreate = z.infer<typeof MentorRequestCreate>;
 
-export const AdminLogin = z.object({ password: z.string().min(1).max(200) });
-
 export const RequestStatusUpdate = z.object({ status: z.enum(REQUEST_STATUSES) });

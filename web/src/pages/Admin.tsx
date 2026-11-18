@@ -1,10 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { AREAS, REQUEST_STATUSES } from '@mbq/shared';
 import { api, ApiError } from '../lib/api';
+import { completeSignIn, currentToken, fetchAuthConfig, forgetToken, signIn, signOut, type AuthConfig } from '../lib/auth';
 
-const TOKEN_KEY = 'mbq-admin-token';
-const getToken = () => { try { return sessionStorage.getItem(TOKEN_KEY) || ''; } catch { return ''; } };
-const setToken = (t: string) => { try { t ? sessionStorage.setItem(TOKEN_KEY, t) : sessionStorage.removeItem(TOKEN_KEY); } catch { /* ignore */ } };
 const areaTitle = (k: string | null) => AREAS.find(a => a.k === k)?.title ?? '—';
 const when = (s: string | null) => (s ? new Date(s).toLocaleString() : '—');
 
@@ -20,37 +18,81 @@ interface Sess { id: string; variant: string; grade: number | null; pos: number;
 
 const TABS = ['Overview', 'Mentor requests', 'Feedback', 'Quiz sessions'] as const;
 
+type View =
+  | { s: 'loading' }
+  | { s: 'error'; msg: string }
+  | { s: 'signedOut'; cfg: AuthConfig; msg?: string }
+  | { s: 'forbidden'; cfg: AuthConfig; email: string | null }
+  | { s: 'in'; cfg: AuthConfig; token: string; email: string | null };
+
 export function Admin() {
-  const [token, setTok] = useState(getToken);
-  const signOut = useCallback(() => { setToken(''); setTok(''); }, []);
+  const [view, setView] = useState<View>({ s: 'loading' });
+
+  const refresh = useCallback(async (cfg: AuthConfig, msg?: string) => {
+    const cur = currentToken(cfg);
+    if (!cur) return setView({ s: 'signedOut', cfg, msg });
+    try {
+      const me = await api.admin.me(cur.token);
+      setView({ s: 'in', cfg, token: cur.token, email: cur.email ?? me.email });
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 403) return setView({ s: 'forbidden', cfg, email: cur.email });
+      if (e instanceof ApiError && e.status === 401) { forgetToken(); return setView({ s: 'signedOut', cfg, msg: 'Your session ended. Sign in again.' }); }
+      setView({ s: 'error', msg: 'Couldn’t reach the server. Refresh to try again.' });
+    }
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      let cfg: AuthConfig;
+      try { cfg = await fetchAuthConfig(); } catch { return setView({ s: 'error', msg: 'Couldn’t reach the server. Refresh to try again.' }); }
+      let msg: string | undefined;
+      try { await completeSignIn(cfg); } catch (e) { msg = (e as Error).message; }
+      await refresh(cfg, msg);
+    })();
+  }, [refresh]);
+
+  const onAuthFail = useCallback(() => {
+    if (view.s !== 'in') return;
+    forgetToken();
+    setView({ s: 'signedOut', cfg: view.cfg, msg: 'Your session ended. Sign in again.' });
+  }, [view]);
+
   return (
     <main className="wrap page gap-22">
       <div className="row gap-10">
         <h1 className="h-page">Admin</h1>
-        {token && <button className="btn btn-ghost ml-auto" onClick={signOut}>Sign out</button>}
+        {(view.s === 'in' || view.s === 'forbidden') && (
+          <div className="row gap-10 ml-auto">
+            {view.email && <span className="small muted">{view.email}</span>}
+            {view.cfg.mode === 'cognito' && <button className="btn btn-ghost" onClick={() => signOut(view.cfg)}>Sign out</button>}
+          </div>
+        )}
       </div>
-      {token ? <Dashboard token={token} onAuthFail={signOut} /> : <Login onToken={t => { setToken(t); setTok(t); }} />}
+      {view.s === 'loading' && <p className="muted">Loading…</p>}
+      {view.s === 'error' && <p className="error" role="alert">{view.msg}</p>}
+      {view.s === 'signedOut' && <SignIn cfg={view.cfg} msg={view.msg} />}
+      {view.s === 'forbidden' && (
+        <div className="card stack gap-10" style={{ padding: 26, maxWidth: 520 }}>
+          <h4 style={{ margin: 0 }}>This account isn’t an admin</h4>
+          <p className="muted" style={{ margin: 0, fontSize: 15 }}>Ask an existing admin to add you to the “admins” group in Cognito, then sign out and back in.</p>
+        </div>
+      )}
+      {view.s === 'in' && <Dashboard token={view.token} onAuthFail={onAuthFail} />}
     </main>
   );
 }
 
-function Login({ onToken }: { onToken: (t: string) => void }) {
-  const [pw, setPw] = useState('');
-  const [error, setError] = useState('');
+function SignIn({ cfg, msg }: { cfg: AuthConfig; msg?: string }) {
   const [busy, setBusy] = useState(false);
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setBusy(true); setError('');
-    try { onToken((await api.admin.login(pw)).token); }
-    catch (err) { setError(err instanceof ApiError && err.status === 401 ? 'Wrong password.' : 'Couldn’t sign in. Try again.'); }
-    finally { setBusy(false); }
-  };
+  if (cfg.mode !== 'cognito') {
+    return <p className="error" role="alert">Admin sign-in isn’t set up on this server. See “Admin sign-in” in the README.</p>;
+  }
   return (
-    <form className="card stack gap-14" style={{ padding: 26, maxWidth: 420 }} onSubmit={submit}>
-      <div className="field"><label htmlFor="admin-pw">Password</label><input id="admin-pw" className="input" type="password" autoComplete="current-password" value={pw} onChange={e => setPw(e.target.value)} style={{ minHeight: 44 }} /></div>
-      {error && <p className="error" role="alert">{error}</p>}
-      <button className="btn btn-primary self-start" disabled={!pw || busy}>{busy ? 'Signing in…' : 'Sign in'}</button>
-    </form>
+    <div className="card stack gap-14" style={{ padding: 26, maxWidth: 460 }}>
+      <p style={{ margin: 0, fontSize: 15 }}>Sign in with your admin account.</p>
+      {msg && <p className="error" role="alert">{msg}</p>}
+      <button className="btn btn-primary self-start" disabled={busy} onClick={() => { setBusy(true); signIn(cfg).catch(() => setBusy(false)); }}>{busy ? 'Opening sign-in…' : 'Sign in'}</button>
+    </div>
   );
 }
 

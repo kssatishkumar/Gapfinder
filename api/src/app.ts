@@ -1,13 +1,13 @@
 import Fastify, { type FastifyInstance } from 'fastify';
 import { ZodError, type ZodType } from 'zod';
 import { cleanAnswers, summarize, QUESTION_COUNT, AREAS } from '@mbq/shared';
-import { SessionUpsert, FeedbackCreate, MentorRequestCreate, AdminLogin, RequestStatusUpdate } from '@mbq/shared/schemas';
+import { SessionUpsert, FeedbackCreate, MentorRequestCreate, RequestStatusUpdate } from '@mbq/shared/schemas';
 import { query } from './db';
-import { checkPassword, issueToken, requireAdmin } from './auth';
+import { authConfig, defaultVerifier, requireAdmin, type AdminVerifier } from './auth';
 
 const parse = <T>(schema: ZodType<T>, body: unknown): T => schema.parse(body);
 
-export function buildApp(opts: { logger?: boolean } = {}): FastifyInstance {
+export function buildApp(opts: { logger?: boolean; verifyAdmin?: AdminVerifier } = {}): FastifyInstance {
   const app = Fastify({ logger: opts.logger ?? false, bodyLimit: 64 * 1024, trustProxy: true });
 
   app.setErrorHandler((err, req, reply) => {
@@ -80,17 +80,13 @@ export function buildApp(opts: { logger?: boolean } = {}): FastifyInstance {
 
   // ---------- admin ----------
 
-  app.post('/api/admin/login', async (req, reply) => {
-    const { password } = parse(AdminLogin, req.body);
-    if (!(await checkPassword(password))) {
-      await new Promise(r => setTimeout(r, 500)); // slow down guessing
-      return reply.code(401).send({ error: 'Wrong password' });
-    }
-    return { token: await issueToken() };
-  });
+  /** Public: tells the admin page how to sign in (Cognito domain and app client id are not secrets). */
+  app.get('/api/auth/config', async () => authConfig());
 
   app.register(async admin => {
-    admin.addHook('preHandler', requireAdmin);
+    admin.addHook('preHandler', requireAdmin(opts.verifyAdmin ?? defaultVerifier));
+
+    admin.get('/api/admin/me', async req => ({ email: req.admin?.email ?? null }));
 
     admin.get('/api/admin/summary', async () => {
       const [s, areas, fb, mr] = await Promise.all([

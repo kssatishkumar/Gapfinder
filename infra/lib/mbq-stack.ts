@@ -2,25 +2,32 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  Stack, type StackProps, Duration, RemovalPolicy, CfnOutput, Tags,
-  aws_ec2 as ec2, aws_rds as rds, aws_secretsmanager as sm, aws_lambda as lambda,
+  Stack, type StackProps, Duration, RemovalPolicy, CfnOutput, Tags, Fn,
+  aws_ec2 as ec2, aws_rds as rds, aws_lambda as lambda, aws_cognito as cognito,
   aws_logs as logs, aws_s3 as s3, aws_s3_deployment as s3deploy,
   aws_cloudfront as cf, aws_cloudfront_origins as origins, triggers,
 } from 'aws-cdk-lib';
 import { NodejsFunction, OutputFormat, type NodejsFunctionProps } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { HttpApi, HttpMethod, CfnStage } from 'aws-cdk-lib/aws-apigatewayv2';
 import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations';
+import { HttpUserPoolAuthorizer } from 'aws-cdk-lib/aws-apigatewayv2-authorizers';
 import type { Construct } from 'constructs';
 
 const ROOT = join(fileURLToPath(import.meta.url), '..', '..', '..');
+const ADMIN_GROUP = 'admins'; // must match ADMIN_GROUP in api/src/auth.ts
 
-export interface MbqStackProps extends StackProps { stage: 'staging' | 'prod' }
+export interface MbqStackProps extends StackProps {
+  stage: 'staging' | 'prod';
+  /** If set, this person is created as the first admin and gets an invite email from Cognito. */
+  adminEmail?: string;
+}
 
 /**
- * Browser → CloudFront ─┬─ /*      → S3 (the React app)
- *                       └─ /api/*  → API Gateway → Lambda (Fastify) → RDS PostgreSQL
- * Lambda and RDS sit in isolated subnets with no internet access; Lambda reaches
- * Secrets Manager through a VPC endpoint. No NAT gateway, to keep cost down.
+ * Browser → CloudFront ─┬─ /*            → S3 (the React app)
+ *                       ├─ /api/admin/*  → API Gateway (Cognito authorizer) → Lambda → RDS
+ *                       └─ /api/*        → API Gateway → Lambda (Fastify) → RDS PostgreSQL
+ * Admins sign in on Cognito's hosted login page. Lambda and RDS sit in isolated subnets with
+ * no internet access; Lambda reaches Secrets Manager through a VPC endpoint. No NAT gateway.
  */
 export class MbqStack extends Stack {
   constructor(scope: Construct, id: string, props: MbqStackProps) {
@@ -62,16 +69,6 @@ export class MbqStack extends Stack {
       cloudwatchLogsRetention: logs.RetentionDays.ONE_MONTH,
     });
 
-    // ---------- app secrets (generated; nothing secret lives in the repo) ----------
-    const adminSecret = new sm.Secret(this, 'AdminSecret', {
-      description: 'My Big Quest admin page password (key: adminPassword)',
-      generateSecretString: { secretStringTemplate: '{}', generateStringKey: 'adminPassword', passwordLength: 24, excludePunctuation: true },
-    });
-    const appSecret = new sm.Secret(this, 'AppSecret', {
-      description: 'My Big Quest token signing key (key: jwtSecret)',
-      generateSecretString: { secretStringTemplate: '{}', generateStringKey: 'jwtSecret', passwordLength: 64, excludePunctuation: true },
-    });
-
     // ---------- Lambdas ----------
     const fnDefaults: NodejsFunctionProps = {
       runtime: lambda.Runtime.NODEJS_22_X,
@@ -97,11 +94,8 @@ export class MbqStack extends Stack {
       entry: join(ROOT, 'api', 'src', 'lambda.ts'),
       memorySize: 512,
       timeout: Duration.seconds(15),
-      environment: { ...fnDefaults.environment, ADMIN_SECRET_ARN: adminSecret.secretArn, APP_SECRET_ARN: appSecret.secretArn },
     });
     db.secret!.grantRead(apiFn);
-    adminSecret.grantRead(apiFn);
-    appSecret.grantRead(apiFn);
 
     // Runs the schema migrations after the database is ready, on every deploy that changes the code.
     const migrateFn = new NodejsFunction(this, 'MigrateFn', {
@@ -114,9 +108,8 @@ export class MbqStack extends Stack {
     db.secret!.grantRead(migrateFn);
     new triggers.Trigger(this, 'MigrateOnDeploy', { handler: migrateFn, executeAfter: [db], executeOnHandlerChange: true, timeout: Duration.minutes(3) });
 
-    // ---------- HTTP API ----------
+    // ---------- HTTP API (routes are added below, once Cognito exists) ----------
     const httpApi = new HttpApi(this, 'HttpApi', { description: 'My Big Quest API' });
-    httpApi.addRoutes({ path: '/api/{proxy+}', methods: [HttpMethod.ANY], integration: new HttpLambdaIntegration('ApiIntegration', apiFn) });
     const apiStage = httpApi.defaultStage!.node.defaultChild as CfnStage;
     apiStage.defaultRouteSettings = { throttlingRateLimit: 50, throttlingBurstLimit: 100 };
 
@@ -140,6 +133,14 @@ export class MbqStack extends Stack {
     });
 
     const apiOrigin = new origins.HttpOrigin(`${httpApi.apiId}.execute-api.${this.region}.${this.urlSuffix}`);
+    const apiBehavior: cf.BehaviorOptions = {
+      origin: apiOrigin,
+      viewerProtocolPolicy: cf.ViewerProtocolPolicy.HTTPS_ONLY,
+      allowedMethods: cf.AllowedMethods.ALLOW_ALL,
+      cachePolicy: cf.CachePolicy.CACHING_DISABLED,
+      originRequestPolicy: cf.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+      responseHeadersPolicy: cf.ResponseHeadersPolicy.SECURITY_HEADERS,
+    };
     const distribution = new cf.Distribution(this, 'Cdn', {
       comment: `My Big Quest (${props.stage})`,
       defaultRootObject: 'index.html',
@@ -151,18 +152,73 @@ export class MbqStack extends Stack {
         responseHeadersPolicy: cf.ResponseHeadersPolicy.SECURITY_HEADERS,
         functionAssociations: [{ function: spaRewrite, eventType: cf.FunctionEventType.VIEWER_REQUEST }],
       },
-      additionalBehaviors: {
-        '/api/*': {
-          origin: apiOrigin,
-          viewerProtocolPolicy: cf.ViewerProtocolPolicy.HTTPS_ONLY,
-          allowedMethods: cf.AllowedMethods.ALLOW_ALL,
-          cachePolicy: cf.CachePolicy.CACHING_DISABLED,
-          originRequestPolicy: cf.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
-          responseHeadersPolicy: cf.ResponseHeadersPolicy.SECURITY_HEADERS,
-        },
+      additionalBehaviors: { '/api/*': apiBehavior },
+    });
+    const siteUrl = `https://${distribution.distributionDomainName}`;
+
+    // ---------- admin sign-in (Cognito) ----------
+    const userPool = new cognito.UserPool(this, 'AdminUsers', {
+      userPoolName: `my-big-quest-admins-${props.stage}`,
+      selfSignUpEnabled: false, // admins are invited, nobody can sign up
+      signInAliases: { email: true },
+      autoVerify: { email: true },
+      standardAttributes: { email: { required: true, mutable: true } },
+      passwordPolicy: { minLength: 12, requireLowercase: true, requireUppercase: true, requireDigits: true, requireSymbols: false, tempPasswordValidity: Duration.days(7) },
+      mfa: cognito.Mfa.OPTIONAL,
+      mfaSecondFactor: { otp: true, sms: false },
+      accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
+      userInvitation: {
+        emailSubject: 'Your My Big Quest admin account',
+        emailBody: `You've been added as an admin for My Big Quest (${props.stage}). Sign in at ${siteUrl}/admin with your email address {username} and this temporary password: {####}`,
       },
+      removalPolicy: prod ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
+    });
+    const adminsGroup = new cognito.CfnUserPoolGroup(this, 'AdminsGroup', { userPoolId: userPool.userPoolId, groupName: ADMIN_GROUP, description: 'Can use /admin' });
+
+    // Hosted login page at https://mbq-<stage>-<account>.auth.<region>.amazoncognito.com
+    const domain = userPool.addDomain('LoginDomain', {
+      cognitoDomain: { domainPrefix: Fn.join('-', ['mbq', props.stage, this.account]) },
     });
 
+    const callbackUrls = [`${siteUrl}/admin`, ...(prod ? [] : ['http://localhost:5173/admin'])];
+    const client = userPool.addClient('AdminWeb', {
+      generateSecret: false, // browser app: public client with PKCE
+      authFlows: { userSrp: true },
+      oAuth: { flows: { authorizationCodeGrant: true }, scopes: [cognito.OAuthScope.OPENID, cognito.OAuthScope.EMAIL], callbackUrls, logoutUrls: callbackUrls },
+      supportedIdentityProviders: [cognito.UserPoolClientIdentityProvider.COGNITO],
+      accessTokenValidity: Duration.hours(8),
+      idTokenValidity: Duration.hours(8),
+      refreshTokenValidity: Duration.days(1),
+      preventUserExistenceErrors: true,
+      enableTokenRevocation: true,
+    });
+
+    if (props.adminEmail) {
+      const user = new cognito.CfnUserPoolUser(this, 'FirstAdmin', {
+        userPoolId: userPool.userPoolId,
+        username: props.adminEmail,
+        userAttributes: [{ name: 'email', value: props.adminEmail }, { name: 'email_verified', value: 'true' }],
+        desiredDeliveryMediums: ['EMAIL'],
+      });
+      const membership = new cognito.CfnUserPoolUserToGroupAttachment(this, 'FirstAdminInGroup', { userPoolId: userPool.userPoolId, groupName: ADMIN_GROUP, username: props.adminEmail });
+      membership.node.addDependency(user, adminsGroup);
+    }
+
+    apiFn.addEnvironment('COGNITO_CLIENT_ID', client.userPoolClientId);
+    apiFn.addEnvironment('COGNITO_DOMAIN', domain.baseUrl());
+
+    // ---------- API routes ----------
+    // API Gateway checks the Cognito token on every /api/admin/* call before the Lambda runs.
+    const integration = new HttpLambdaIntegration('ApiIntegration', apiFn);
+    httpApi.addRoutes({ path: '/api/{proxy+}', methods: [HttpMethod.ANY], integration });
+    httpApi.addRoutes({
+      path: '/api/admin/{proxy+}',
+      methods: [HttpMethod.ANY],
+      integration,
+      authorizer: new HttpUserPoolAuthorizer('AdminAuthorizer', userPool, { userPoolClients: [client] }),
+    });
+
+    // ---------- site files ----------
     const dist = join(ROOT, 'web', 'dist');
     if (!existsSync(join(dist, 'index.html'))) throw new Error('web/dist is missing. Run "npm run build -w web" before cdk synth/deploy.');
     new s3deploy.BucketDeployment(this, 'DeploySite', {
@@ -173,8 +229,11 @@ export class MbqStack extends Stack {
       memoryLimit: 512,
     });
 
-    new CfnOutput(this, 'Url', { value: `https://${distribution.distributionDomainName}` });
-    new CfnOutput(this, 'AdminPasswordSecret', { value: adminSecret.secretName, description: 'Read the admin password from this Secrets Manager secret' });
+    new CfnOutput(this, 'Url', { value: siteUrl });
+    new CfnOutput(this, 'AdminUrl', { value: `${siteUrl}/admin` });
+    new CfnOutput(this, 'UserPoolId', { value: userPool.userPoolId, description: 'Add admins here (Cognito console), in the "admins" group' });
+    new CfnOutput(this, 'UserPoolClientId', { value: client.userPoolClientId });
+    new CfnOutput(this, 'CognitoDomain', { value: domain.baseUrl() });
     new CfnOutput(this, 'DbEndpoint', { value: db.dbInstanceEndpointAddress });
   }
 }
