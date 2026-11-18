@@ -202,6 +202,9 @@ export class MbqStack extends Stack {
       });
       const membership = new cognito.CfnUserPoolUserToGroupAttachment(this, 'FirstAdminInGroup', { userPoolId: userPool.userPoolId, groupName: ADMIN_GROUP, username: props.adminEmail });
       membership.node.addDependency(user, adminsGroup);
+      // Later deploys don't pass adminEmail; RETAIN keeps the user instead of deleting them then.
+      user.applyRemovalPolicy(RemovalPolicy.RETAIN);
+      membership.applyRemovalPolicy(RemovalPolicy.RETAIN);
     }
 
     apiFn.addEnvironment('COGNITO_CLIENT_ID', client.userPoolClientId);
