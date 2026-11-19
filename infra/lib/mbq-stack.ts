@@ -94,10 +94,12 @@ export class MbqStack extends Stack {
 
     // Changes only reach the live stage through a new API Gateway deployment, and CDK doesn't notice
     // edits to mapping templates, models or gateway responses. Hash them into the deployment's id so
-    // any change to them creates a new deployment.
+    // any change to them creates a new deployment. Request templates are functions of the table name,
+    // so hash what they render to (JSON.stringify would silently drop functions).
+    const templates = Object.entries(T).map(([k, v]) => [k, typeof v === 'function' ? v('TABLE') : v]);
     const BAD_BODY = '{"error": "Invalid request", "detail": "$util.escapeJavaScript($context.error.validationErrorString)"}';
     api.latestDeployment?.addToLogicalId(createHash('sha256')
-      .update(JSON.stringify([T, sessionPutSchema, feedbackPostSchema, mentorRequestPostSchema, requestStatusSchema, BAD_BODY, GATEWAY_ERRORS]))
+      .update(JSON.stringify([templates, sessionPutSchema, feedbackPostSchema, mentorRequestPostSchema, requestStatusSchema, BAD_BODY, GATEWAY_ERRORS]))
       .digest('hex'));
 
     // Consistent JSON errors for requests API Gateway rejects itself.
@@ -112,8 +114,13 @@ export class MbqStack extends Stack {
     for (const r of responses) api.latestDeployment?.node.addDependency(r);
 
     const validator = new apigw.RequestValidator(this, 'BodyValidator', { restApi: api, validateRequestBody: true, validateRequestParameters: true });
-    const model = (name: string, schema: JsonSchema) =>
-      api.addModel(name, { modelName: name, contentType: 'application/json', schema: schema as apigw.JsonSchema });
+    api.latestDeployment?.node.addDependency(validator);
+    // Models are updated in place, so without this the new deployment can snapshot the old schema.
+    const model = (name: string, schema: JsonSchema) => {
+      const m = api.addModel(name, { modelName: name, contentType: 'application/json', schema: schema as apigw.JsonSchema });
+      api.latestDeployment?.node.addDependency(m);
+      return m;
+    };
 
     const role = new iam.Role(this, 'ApiDynamoRole', { assumedBy: new iam.ServicePrincipal('apigateway.amazonaws.com'), description: 'Lets API Gateway write and read the app tables' });
     role.addToPolicy(new iam.PolicyStatement({ actions: ['dynamodb:UpdateItem'], resources: [sessions.tableArn, requests.tableArn] }));
