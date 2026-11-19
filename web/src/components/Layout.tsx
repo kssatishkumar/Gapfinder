@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
+import { SHOW_MENTORS } from '../lib/features';
 
 export function Layout() {
   const { pathname } = useLocation();
@@ -11,7 +12,7 @@ export function Layout() {
         <nav className="nav topnav">
           <Link to="/" className="nav-brand brand"><span className="brand-dot" /><span>My Big Quest</span></Link>
           <NavLink to="/gapfinder">GapFinder</NavLink>
-          <NavLink to="/mentors">Mentors</NavLink>
+          {SHOW_MENTORS && <NavLink to="/mentors">Mentors</NavLink>}
           <NavLink to="/tips">Tips</NavLink>
         </nav>
       </header>

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { AREAS, QUESTIONS, QUESTION_COUNT, TEXT_MAX, RATINGS, answerLabel, isHighSchool, summarize, type Answers, type Question } from '@mbq/shared';
 import { useQuiz } from '../lib/quizState';
 import { clientId } from '../lib/storage';
+import { SHOW_MENTORS } from '../lib/features';
 import { api } from '../lib/api';
 import { Icon } from '../components/Icon';
 
@@ -195,6 +196,7 @@ function Results({ answers, onFeedback, onEdit, onRestart }: { answers: Answers;
         </section>
       )}
 
+      {SHOW_MENTORS && (
       <section className="band mw-760" style={{ background: 'var(--color-accent-2-100)' }}>
         <div className="stack" style={{ gap: 4, flex: 1, minWidth: 220 }}>
           <h4 style={{ margin: 0 }}>Talk it through with a mentor</h4>
@@ -202,6 +204,7 @@ function Results({ answers, onFeedback, onEdit, onRestart }: { answers: Answers;
         </div>
         <Link to="/mentors?from=results" className="btn btn-secondary" style={{ fontSize: 16, padding: '12px 24px' }}>Find a mentor</Link>
       </section>
+      )}
 
       <section className="band mw-760" style={{ background: 'var(--color-accent-100)' }}>
         <div className="stack" style={{ gap: 4, flex: 1, minWidth: 220 }}>

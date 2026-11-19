@@ -1,4 +1,5 @@
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { SHOW_MENTORS } from '../lib/features';
 
 interface Tip { id: string; kicker: string; title: string; lead: string; points: { h: string; b: string }[]; quote: string; quoteNote: string; cta: string; to: string; source: string }
 
@@ -27,7 +28,7 @@ const TIPS: Tip[] = [
     { h: 'Run it small first', b: 'One event, one student you tutor, one app that solves one thing. Then grow it.' },
     { h: 'Keep a record', b: 'Who you helped, what you learned, what you changed. That becomes your essay.' },
     { h: 'You don’t need paperwork to start', b: 'Registering an official nonprofit takes forms and an adult. Most student projects don’t need it at first.' },
-  ], quote: 'How appealing is creating your own nonprofit organization?', quoteNote: 'A student, in our survey', cta: 'Talk to a nonprofit founder', to: '/mentors?ask=nguyen', source: '' },
+  ], quote: 'How appealing is creating your own nonprofit organization?', quoteNote: 'A student, in our survey', cta: SHOW_MENTORS ? 'Talk to a nonprofit founder' : 'Find your gaps', to: SHOW_MENTORS ? '/mentors?ask=nguyen' : '/gapfinder', source: '' },
 ];
 
 export function Tips() {

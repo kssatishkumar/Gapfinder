@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
+import { SHOW_MENTORS } from '../lib/features';
 
-const CARDS = [
+const ALL_CARDS = [
   { stat: '13 of 28', color: 'var(--color-accent-700)', text: 'said they don’t know where to start, what colleges want, or which activities count.',
     title: 'GapFinder', body: 'Nine quick questions, then see exactly what’s missing and a first step for each gap.', to: '/gapfinder', cta: 'Try GapFinder →' },
   { stat: '26 of 28', color: 'var(--color-accent-2-700)', text: 'named a field they might want to work in, from medicine to law to marine biology.',
@@ -8,6 +9,7 @@ const CARDS = [
   { stat: '8 of 28', color: 'var(--color-accent-700)', text: 'said not having enough time is what’s in the way.',
     title: 'Tips', body: 'Short reads on what colleges look for, which activities are worth it, and planning your week.', to: '/tips', cta: 'Read the tips →' },
 ];
+const CARDS = SHOW_MENTORS ? ALL_CARDS : ALL_CARDS.filter(c => c.to !== '/mentors');
 
 export function Home() {
   return (
@@ -16,10 +18,11 @@ export function Home() {
         <div className="stack gap-22 mw-560" style={{ alignItems: 'flex-start' }}>
           <span className="tag tag-accent-2" style={{ fontSize: 13, padding: '5px 14px' }}>For students in grades 6–12</span>
           <h1 className="h-hero">Find the gaps in your college plan while there’s still time to fix them.</h1>
-          <p className="lead" style={{ maxWidth: 500 }}>Answer nine quick questions, see what’s missing compared with what colleges look for, then talk it through with someone who works in your field.</p>
+          <p className="lead" style={{ maxWidth: 500 }}>Answer nine quick questions, see what’s missing compared with what colleges look for{SHOW_MENTORS ? ', then talk it through with someone who works in your field' : ', and get a first step for each gap'}.</p>
           <div className="row gap-10" style={{ marginTop: 6 }}>
             <Link to="/gapfinder" className="btn btn-primary btn-lg">Start GapFinder</Link>
-            <Link to="/mentors" className="btn btn-secondary btn-lg">Meet the mentors</Link>
+            {SHOW_MENTORS ? <Link to="/mentors" className="btn btn-secondary btn-lg">Meet the mentors</Link>
+              : <Link to="/tips" className="btn btn-secondary btn-lg">Read the tips</Link>}
           </div>
         </div>
         <div className="hero-art" aria-hidden="true">
