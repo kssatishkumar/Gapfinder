@@ -1,4 +1,4 @@
-import type { SessionUpsert, FeedbackCreate, MentorRequestCreate, Mentor, Summary } from '@mbq/shared';
+import type { SessionPut, FeedbackPost, MentorRequestPost, SessionRow, FeedbackRow, RequestRow } from '@mbq/shared';
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) { super(message); }
@@ -7,7 +7,11 @@ export class ApiError extends Error {
 async function call<T>(method: string, path: string, body?: unknown, token?: string): Promise<T> {
   const res = await fetch('/api' + path, {
     method,
-    headers: { ...(body !== undefined ? { 'content-type': 'application/json' } : {}), ...(token ? { authorization: 'Bearer ' + token } : {}) },
+    headers: {
+      ...(body !== undefined ? { 'content-type': 'application/json' } : {}),
+      // Admin calls carry the Cognito access token in X-Auth (CloudFront forwards it to API Gateway).
+      ...(token ? { 'x-auth': token } : {}),
+    },
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
   const data = await res.json().catch(() => ({}));
@@ -16,13 +20,13 @@ async function call<T>(method: string, path: string, body?: unknown, token?: str
 }
 
 export const api = {
-  mentors: () => call<Mentor[]>('GET', '/mentors'),
-  saveSession: (id: string, b: SessionUpsert) => call<{ id: string; summary: Summary }>('PUT', '/sessions/' + id, b),
-  sendFeedback: (b: FeedbackCreate) => call<{ id: string }>('POST', '/feedback', b),
-  requestMentor: (b: MentorRequestCreate) => call<{ id: string }>('POST', '/mentor-requests', b),
+  saveSession: (b: SessionPut) => call<{ ok: true }>('PUT', '/sessions', b),
+  sendFeedback: (b: FeedbackPost) => call<{ id: string }>('POST', '/feedback', b),
+  requestMentor: (b: MentorRequestPost) => call<{ id: string }>('POST', '/mentor-requests', b),
   admin: {
-    me: (token: string) => call<{ email: string | null }>('GET', '/admin/me', undefined, token),
-    get: <T>(path: string, token: string) => call<T>('GET', '/admin/' + path, undefined, token),
-    setRequestStatus: (id: string, status: string, token: string) => call('PATCH', '/admin/requests/' + id, { status }, token),
+    sessions: (token: string) => call<SessionRow[]>('GET', '/admin/sessions', undefined, token),
+    feedback: (token: string) => call<FeedbackRow[]>('GET', '/admin/feedback', undefined, token),
+    requests: (token: string) => call<RequestRow[]>('GET', '/admin/requests', undefined, token),
+    setRequestStatus: (id: string, status: string, token: string) => call('PATCH', '/admin/requests/' + encodeURIComponent(id), { status }, token),
   },
 };

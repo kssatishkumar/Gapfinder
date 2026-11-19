@@ -8,7 +8,7 @@
 //
 // Run `npm run deploy -- --help` for all options.
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { createInterface } from 'node:readline/promises';
 
@@ -24,7 +24,6 @@ Options:
   --region <region>      AWS region (default: the profile's region)
   --yes                  Don't ask for confirmation; approve IAM/security changes automatically
   --skip-tests           Skip typecheck and tests (not allowed for prod)
-  --with-db-tests        Also run the API tests (needs the local database: npm run db:start)
   --allow-dirty          Deploy prod with uncommitted changes
   --bootstrap            Run "cdk bootstrap" first if the account/region isn't bootstrapped
   --dry-run              Run checks, tests, build and "cdk synth" only. Makes no AWS calls.
@@ -70,7 +69,7 @@ async function confirm(question, expected) {
 
 // ---------- arguments ----------
 function parseArgs(argv) {
-  const o = { stage: null, adminEmail: null, profile: null, region: null, yes: false, skipTests: false, withDbTests: false, allowDirty: false, bootstrap: false, dryRun: false };
+  const o = { stage: null, adminEmail: null, profile: null, region: null, yes: false, skipTests: false, allowDirty: false, bootstrap: false, dryRun: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     const val = () => {
@@ -84,7 +83,6 @@ function parseArgs(argv) {
     else if (a === '--region') o.region = val();
     else if (a === '--yes' || a === '-y') o.yes = true;
     else if (a === '--skip-tests') o.skipTests = true;
-    else if (a === '--with-db-tests') o.withDbTests = true;
     else if (a === '--allow-dirty') o.allowDirty = true;
     else if (a === '--bootstrap') o.bootstrap = true;
     else if (a === '--dry-run') o.dryRun = true;
@@ -169,9 +167,7 @@ if (opt.skipTests) {
   step('Typechecking');
   run('npm', ['run', 'typecheck']);
   step('Running tests');
-  run('npm', ['test', '-w', 'shared']);
-  if (opt.withDbTests) run('npm', ['test', '-w', 'api']);
-  else info(dim('API tests skipped (they need the local database). Add --with-db-tests to run them.'));
+  run('npm', ['test']);
 }
 
 step('Building the web app');
@@ -186,7 +182,7 @@ if (opt.dryRun) {
   process.exit(0);
 }
 
-step(`Deploying ${stackName} (the first deploy takes about 15–20 minutes, mostly the database and CloudFront)`);
+step(`Deploying ${stackName} (the first deploy takes about 5–10 minutes, mostly CloudFront)`);
 mkdirSync(join(ROOT, '.local'), { recursive: true });
 const outputsFile = join(ROOT, '.local', `outputs-${opt.stage}.json`);
 const started = Date.now();
@@ -199,16 +195,30 @@ info(`done in ${Math.round((Date.now() - started) / 60000)} min`);
 
 const outputs = JSON.parse(readFileSync(outputsFile, 'utf8'))[stackName] ?? {};
 const url = outputs.Url;
-if (!url) fail(`Deploy finished but no Url output was found in ${outputsFile}.`);
+for (const k of ['Url', 'SiteBucket', 'DistributionId', 'UserPoolClientId', 'CognitoDomain']) {
+  if (!outputs[k]) fail(`Deploy finished but the "${k}" output is missing from ${outputsFile}.`);
+}
+
+// There's no Lambda to copy files, so the site is uploaded here with the AWS CLI.
+step('Uploading the site to S3');
+const dist = join(ROOT, 'web', 'dist');
+writeFileSync(join(dist, 'config.json'), JSON.stringify({ mode: 'cognito', domain: outputs.CognitoDomain, clientId: outputs.UserPoolClientId }, null, 2) + '\n');
+info('wrote config.json (admin sign-in settings)');
+const s3 = `s3://${outputs.SiteBucket}`;
+const awsDeployArgs = [...(opt.profile ? ['--profile', opt.profile] : []), '--region', region];
+// Hashed files under assets/ never change, so browsers can keep them; everything else is revalidated.
+run('aws', ['s3', 'sync', join(dist, 'assets'), `${s3}/assets`, '--delete', '--cache-control', 'public,max-age=31536000,immutable', ...awsDeployArgs]);
+run('aws', ['s3', 'sync', dist, s3, '--delete', '--exclude', 'assets/*', '--cache-control', 'no-cache', ...awsDeployArgs]);
+run('aws', ['cloudfront', 'create-invalidation', '--distribution-id', outputs.DistributionId, '--paths', '/*', '--query', 'Invalidation.Id', '--output', 'text', ...(opt.profile ? ['--profile', opt.profile] : [])]);
 
 step('Smoke-testing the live site');
-async function check(path, test, tries = 10) {
+async function check(path, test, { tries = 10, method = 'GET', body } = {}) {
   for (let i = 1; i <= tries; i++) {
     try {
-      const res = await fetch(url + path, { signal: AbortSignal.timeout(15000) });
-      const body = await res.text();
-      if (test(res, body)) return info(green('✔ ') + `${path} → ${res.status}`);
-      if (i === tries) return warn(`${path} → ${res.status}: ${body.slice(0, 120)}`);
+      const res = await fetch(url + path, { method, body, headers: body ? { 'content-type': 'application/json' } : {}, signal: AbortSignal.timeout(15000) });
+      const text = await res.text();
+      if (test(res, text)) return info(green('✔ ') + `${path} → ${res.status}`);
+      if (i === tries) return warn(`${path} → ${res.status}: ${text.slice(0, 120)}`);
     } catch (e) {
       if (i === tries) return warn(`${path} → ${e.message}`);
     }
@@ -216,14 +226,16 @@ async function check(path, test, tries = 10) {
   }
 }
 await check('/', (r, b) => r.ok && b.includes('<div id="root">'));
-await check('/api/health', (r) => r.ok);
-await check('/api/auth/config', (r, b) => r.ok && b.includes('"cognito"'));
-await check('/api/admin/me', (r) => r.status === 401);
+await check('/mentors', (r, b) => r.ok && b.includes('<div id="root">'));
+await check('/config.json', (r, b) => r.ok && b.includes('"cognito"'));
+await check('/api/admin/sessions', (r) => r.status === 401);
+// An invalid body is rejected by API Gateway's validation, so this check never writes anything.
+await check('/api/sessions', (r) => r.status === 400, { method: 'PUT', body: '{"id":"smoke-test"}' });
 
 console.log('\n' + green(bold(`✔ Deployed ${opt.stage}`)));
 console.log(`
   Site:       ${url}
   Admin:      ${outputs.AdminUrl}
-  User pool:  ${outputs.UserPoolId}   (add admins in Cognito, "admins" group)
+  User pool:  ${outputs.UserPoolId}   (everyone in this Cognito pool is an admin)
   Outputs:    .local/outputs-${opt.stage}.json
 ${opt.adminEmail ? `\n  An invite with a temporary password was emailed to ${opt.adminEmail}.` : ''}`);

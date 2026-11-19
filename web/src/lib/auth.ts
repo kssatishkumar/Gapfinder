@@ -1,5 +1,6 @@
 // Admin sign-in with Amazon Cognito's hosted login page (OAuth 2.0 authorization code + PKCE).
 // Tokens live in sessionStorage, so closing the tab signs out.
+// Settings come from /config.json: written by scripts/deploy.mjs on AWS, {"mode":"dev"} locally.
 
 export type AuthConfig = { mode: 'cognito'; domain: string; clientId: string } | { mode: 'dev' } | { mode: 'none' };
 
@@ -24,7 +25,7 @@ function decodeJwt(t: string): Record<string, unknown> {
 }
 
 export async function fetchAuthConfig(): Promise<AuthConfig> {
-  const res = await fetch('/api/auth/config');
+  const res = await fetch('/config.json', { cache: 'no-store' });
   if (!res.ok) throw new Error('config');
   return res.json();
 }

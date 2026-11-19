@@ -3,17 +3,14 @@
   "private": true,
   "workspaces": [
     "shared",
-    "api",
+    "mock-api",
     "web",
     "infra"
   ],
   "scripts": {
-    "db:start": "node scripts/devdb.mjs start",
-    "db:stop": "node scripts/devdb.mjs stop",
-    "db:migrate": "npm run migrate -w api",
-    "dev:api": "npm run dev -w api",
+    "dev:api": "npm run dev -w mock-api",
     "dev:web": "npm run dev -w web",
-    "build": "npm run build -w web && npm run typecheck -w api",
+    "build": "npm run build -w web",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "deploy": "node scripts/deploy.mjs",

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { FIELDS, GRADES, firstName, initials, type Mentor } from '@mbq/shared';
+import { FIELDS, GRADES, MENTOR_SEED, firstName, initials, type Mentor } from '@mbq/shared';
 import { api, ApiError } from '../lib/api';
 import { clientId, load, save } from '../lib/storage';
 import { gapTitles, savedQuiz } from '../lib/quizState';
@@ -9,25 +9,20 @@ const SENT_KEY = 'mbq-sent';
 
 export function Mentors() {
   const [params] = useSearchParams();
-  const [mentors, setMentors] = useState<Mentor[] | null>(null);
-  const [loadError, setLoadError] = useState(false);
+  const mentors = MENTOR_SEED;
   const [filter, setFilter] = useState('All');
   const [open, setOpen] = useState<Mentor | null>(null);
   const [sent, setSent] = useState<Record<string, boolean>>(() => load(SENT_KEY, {}));
 
-  useEffect(() => {
-    api.mentors().then(setMentors).catch(() => setLoadError(true));
-  }, []);
-
   // Tips links straight to one mentor with ?ask=<id>.
   useEffect(() => {
     const id = params.get('ask');
-    const m = id && mentors?.find(x => x.id === id);
+    const m = id && mentors.find(x => x.id === id);
     if (m) setOpen(m);
   }, [mentors, params]);
 
   const markSent = (id: string) => { const next = { ...sent, [id]: true }; setSent(next); save(SENT_KEY, next); };
-  const shown = (mentors || []).filter(m => filter === 'All' || m.field === filter);
+  const shown = mentors.filter(m => filter === 'All' || m.field === filter);
 
   return (
     <main className="wrap page gap-32">
@@ -38,8 +33,6 @@ export function Mentors() {
       <div className="row gap-8" role="group" aria-label="Filter by field">
         {['All', ...FIELDS].map(f => <button key={f} className="filter" aria-pressed={filter === f} onClick={() => setFilter(f)}>{f}</button>)}
       </div>
-      {loadError && <p className="error" role="alert">Couldn’t load the mentors. Refresh the page to try again.</p>}
-      {!mentors && !loadError && <p className="muted">Loading mentors…</p>}
       <div className="grid auto-300" style={{ gap: 18 }}>
         {shown.map((m, i) => (
           <div key={m.id} className="card" style={{ padding: 24, gap: 14 }}>
@@ -99,7 +92,7 @@ function RequestDialog({ mentor, fromResults, onClose, onSent }: { mentor: Mento
   const send = async () => {
     setBusy(true); setError('');
     try {
-      await api.requestMentor({ clientId, sessionId: quiz.started ? quiz.sessionId : null, mentorId: mentor.id, grade: grade ? Number(grade) : null, message: msg.trim(), parentEmail: email.trim() });
+      await api.requestMentor({ clientId, sessionId: quiz.started ? quiz.sessionId : null, mentorId: mentor.id, grade: grade ? Number(grade) : null, message: msg.trim(), parentEmail: email.trim().toLowerCase() });
       onSent();
       setDone(true);
     } catch (e) {

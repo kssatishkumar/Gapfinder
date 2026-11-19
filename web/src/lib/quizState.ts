@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AREAS, QUESTION_COUNT, summarize, type Answers } from '@mbq/shared';
+import { AREAS, QUESTION_COUNT, cleanAnswers, summarize, type Answers } from '@mbq/shared';
 import { api } from './api';
 import { clientId, load, save } from './storage';
 
@@ -43,7 +43,7 @@ export function useQuiz() {
     clearTimeout(timer.current);
     timer.current = setTimeout(() => {
       setSaveStatus('saving');
-      api.saveSession(s.sessionId, { clientId, answers: s.answers, pos: s.pos, completed: s.pos >= QUESTION_COUNT })
+      api.saveSession({ id: s.sessionId, clientId, answers: cleanAnswers(s.answers), pos: s.pos, completed: s.pos >= QUESTION_COUNT })
         .then(() => setSaveStatus('saved'))
         .catch(() => setSaveStatus('offline'));
     }, 600);

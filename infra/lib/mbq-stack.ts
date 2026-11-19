@@ -1,20 +1,21 @@
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
 import {
   Stack, type StackProps, Duration, RemovalPolicy, CfnOutput, Tags, Fn,
-  aws_ec2 as ec2, aws_rds as rds, aws_lambda as lambda, aws_cognito as cognito,
-  aws_logs as logs, aws_s3 as s3, aws_s3_deployment as s3deploy,
-  aws_cloudfront as cf, aws_cloudfront_origins as origins, triggers,
+  aws_s3 as s3, aws_cloudfront as cf, aws_cloudfront_origins as origins,
+  aws_dynamodb as ddb, aws_apigateway as apigw, aws_iam as iam, aws_cognito as cognito,
 } from 'aws-cdk-lib';
-import { NodejsFunction, OutputFormat, type NodejsFunctionProps } from 'aws-cdk-lib/aws-lambda-nodejs';
-import { HttpApi, HttpMethod, CfnStage } from 'aws-cdk-lib/aws-apigatewayv2';
-import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations';
-import { HttpUserPoolAuthorizer } from 'aws-cdk-lib/aws-apigatewayv2-authorizers';
 import type { Construct } from 'constructs';
+import { sessionPutSchema, feedbackPostSchema, mentorRequestPostSchema, requestStatusSchema, type JsonSchema } from '@mbq/shared';
+import * as T from './templates';
 
-const ROOT = join(fileURLToPath(import.meta.url), '..', '..', '..');
-const ADMIN_GROUP = 'admins'; // must match ADMIN_GROUP in api/src/auth.ts
+/** [API Gateway response type, status, message] for errors API Gateway answers itself. */
+const GATEWAY_ERRORS: [string, string, string][] = [
+  ['UNAUTHORIZED', '401', 'Not signed in'],
+  ['ACCESS_DENIED', '403', 'Not allowed'],
+  ['MISSING_AUTHENTICATION_TOKEN', '404', 'Not found'],
+  ['THROTTLED', '429', 'Too many requests, try again in a moment'],
+  ['DEFAULT_5XX', '500', 'Something went wrong'],
+];
 
 export interface MbqStackProps extends StackProps {
   stage: 'staging' | 'prod';
@@ -23,11 +24,14 @@ export interface MbqStackProps extends StackProps {
 }
 
 /**
- * Browser → CloudFront ─┬─ /*            → S3 (the React app)
- *                       ├─ /api/admin/*  → API Gateway (Cognito authorizer) → Lambda → RDS
- *                       └─ /api/*        → API Gateway → Lambda (Fastify) → RDS PostgreSQL
- * Admins sign in on Cognito's hosted login page. Lambda and RDS sit in isolated subnets with
- * no internet access; Lambda reaches Secrets Manager through a VPC endpoint. No NAT gateway.
+ * No servers and no Lambda functions:
+ *
+ * Browser → CloudFront ─┬─ /*      → S3 (the React app, uploaded by scripts/deploy.mjs)
+ *                       └─ /api/*  → API Gateway ──(mapping templates)──→ DynamoDB
+ *                                     └─ /api/admin/* requires a Cognito sign-in
+ *
+ * API Gateway validates each request body against the JSON schemas in shared/, then a mapping
+ * template turns it into a DynamoDB call (see lib/templates.ts).
  */
 export class MbqStack extends Stack {
   constructor(scope: Construct, id: string, props: MbqStackProps) {
@@ -36,92 +40,139 @@ export class MbqStack extends Stack {
     Tags.of(this).add('app', 'my-big-quest');
     Tags.of(this).add('stage', props.stage);
 
-    // ---------- network ----------
-    const vpc = new ec2.Vpc(this, 'Vpc', {
-      maxAzs: 2,
-      natGateways: 0,
-      subnetConfiguration: [{ name: 'isolated', subnetType: ec2.SubnetType.PRIVATE_ISOLATED, cidrMask: 24 }],
-    });
-    const isolated = { subnetType: ec2.SubnetType.PRIVATE_ISOLATED };
-    vpc.addInterfaceEndpoint('SecretsManager', { service: ec2.InterfaceVpcEndpointAwsService.SECRETS_MANAGER, subnets: isolated });
-
-    const lambdaSg = new ec2.SecurityGroup(this, 'LambdaSg', { vpc, description: 'API and migration Lambdas' });
-    const dbSg = new ec2.SecurityGroup(this, 'DbSg', { vpc, description: 'PostgreSQL', allowAllOutbound: false });
-    dbSg.addIngressRule(lambdaSg, ec2.Port.tcp(5432), 'Lambdas to Postgres');
-
-    // ---------- database ----------
-    const db = new rds.DatabaseInstance(this, 'Db', {
-      engine: rds.DatabaseInstanceEngine.postgres({ version: rds.PostgresEngineVersion.VER_16 }),
-      instanceType: ec2.InstanceType.of(ec2.InstanceClass.T4G, ec2.InstanceSize.MICRO),
-      vpc, vpcSubnets: isolated, securityGroups: [dbSg],
-      credentials: rds.Credentials.fromGeneratedSecret('mbq_admin'),
-      databaseName: 'mbq',
-      allocatedStorage: 20,
-      maxAllocatedStorage: 100,
-      storageEncrypted: true,
-      multiAz: false,
-      publiclyAccessible: false,
-      backupRetention: Duration.days(prod ? 14 : 3),
+    // ---------- data ----------
+    const table = (name: string) => new ddb.Table(this, name, {
+      partitionKey: { name: 'id', type: ddb.AttributeType.STRING },
+      billingMode: ddb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: prod },
       deletionProtection: prod,
-      removalPolicy: prod ? RemovalPolicy.SNAPSHOT : RemovalPolicy.DESTROY,
-      parameters: { 'rds.force_ssl': '1' },
-      cloudwatchLogsExports: ['postgresql'],
-      cloudwatchLogsRetention: logs.RetentionDays.ONE_MONTH,
+      removalPolicy: prod ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
     });
+    const sessions = table('QuizSessions');
+    const feedback = table('Feedback');
+    const requests = table('MentorRequests');
 
-    // ---------- Lambdas ----------
-    const fnDefaults: NodejsFunctionProps = {
-      runtime: lambda.Runtime.NODEJS_22_X,
-      architecture: lambda.Architecture.ARM_64,
-      vpc, vpcSubnets: isolated, securityGroups: [lambdaSg],
-      depsLockFilePath: join(ROOT, 'package-lock.json'),
-      bundling: {
-        format: OutputFormat.ESM,
-        target: 'node22',
-        minify: true,
-        sourceMap: true,
-        // ESM bundles need a require() shim for CommonJS deps like pg.
-        banner: "import { createRequire } from 'module'; const require = createRequire(import.meta.url);",
-        externalModules: ['@aws-sdk/*', 'pg-native'],
-        forceDockerBundling: false,
-      },
-      environment: { NODE_OPTIONS: '--enable-source-maps', DB_SECRET_ARN: db.secret!.secretArn },
-      logGroup: new logs.LogGroup(this, 'FnLogs', { retention: logs.RetentionDays.ONE_MONTH, removalPolicy: RemovalPolicy.DESTROY }),
-    };
-
-    const apiFn = new NodejsFunction(this, 'ApiFn', {
-      ...fnDefaults,
-      entry: join(ROOT, 'api', 'src', 'lambda.ts'),
-      memorySize: 512,
-      timeout: Duration.seconds(15),
-    });
-    db.secret!.grantRead(apiFn);
-
-    // Runs the schema migrations after the database is ready, on every deploy that changes the code.
-    const migrateFn = new NodejsFunction(this, 'MigrateFn', {
-      ...fnDefaults,
-      entry: join(ROOT, 'api', 'src', 'migrate.ts'),
-      handler: 'handler',
-      memorySize: 256,
-      timeout: Duration.minutes(2),
-    });
-    db.secret!.grantRead(migrateFn);
-    new triggers.Trigger(this, 'MigrateOnDeploy', { handler: migrateFn, executeAfter: [db], executeOnHandlerChange: true, timeout: Duration.minutes(3) });
-
-    // ---------- HTTP API (routes are added below, once Cognito exists) ----------
-    const httpApi = new HttpApi(this, 'HttpApi', { description: 'My Big Quest API' });
-    const apiStage = httpApi.defaultStage!.node.defaultChild as CfnStage;
-    apiStage.defaultRouteSettings = { throttlingRateLimit: 50, throttlingBurstLimit: 100 };
-
-    // ---------- frontend ----------
+    // ---------- site bucket and CDN ----------
     const site = new s3.Bucket(this, 'Site', {
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       encryption: s3.BucketEncryption.S3_MANAGED,
       enforceSSL: true,
-      removalPolicy: RemovalPolicy.DESTROY,
-      autoDeleteObjects: true,
+      // Kept on stack deletion: emptying a bucket automatically would need a Lambda.
+      removalPolicy: RemovalPolicy.RETAIN,
     });
 
+    // ---------- admin sign-in (Cognito). Everyone in this pool is an admin. ----------
+    const userPool = new cognito.UserPool(this, 'AdminUsers', {
+      userPoolName: `my-big-quest-admins-${props.stage}`,
+      selfSignUpEnabled: false, // admins are invited, nobody can sign up
+      signInAliases: { email: true },
+      autoVerify: { email: true },
+      standardAttributes: { email: { required: true, mutable: true } },
+      passwordPolicy: { minLength: 12, requireLowercase: true, requireUppercase: true, requireDigits: true, requireSymbols: false, tempPasswordValidity: Duration.days(7) },
+      mfa: cognito.Mfa.OPTIONAL,
+      mfaSecondFactor: { otp: true, sms: false },
+      accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
+      // No site URL in this text: the pool is created before CloudFront (CloudFront → API → authorizer → pool).
+      userInvitation: {
+        emailSubject: 'Your My Big Quest admin account',
+        emailBody: `You've been added as an admin for My Big Quest (${props.stage}). Open the site's /admin page and sign in with your email address {username} and this temporary password: {####}`,
+      },
+      removalPolicy: prod ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
+    });
+    const domain = userPool.addDomain('LoginDomain', {
+      cognitoDomain: { domainPrefix: Fn.join('-', ['mbq', props.stage, this.account]) },
+    });
+
+    // ---------- API Gateway → DynamoDB ----------
+    const api = new apigw.RestApi(this, 'Api', {
+      restApiName: `my-big-quest-${props.stage}`,
+      description: 'My Big Quest API: request validation + direct DynamoDB integrations, no Lambda',
+      cloudWatchRole: false,
+      endpointTypes: [apigw.EndpointType.REGIONAL],
+      deployOptions: { stageName: 'live', throttlingRateLimit: 20, throttlingBurstLimit: 40, metricsEnabled: true },
+    });
+
+    // Changes only reach the live stage through a new API Gateway deployment, and CDK doesn't notice
+    // edits to mapping templates, models or gateway responses. Hash them into the deployment's id so
+    // any change to them creates a new deployment.
+    const BAD_BODY = '{"error": "Invalid request", "detail": "$util.escapeJavaScript($context.error.validationErrorString)"}';
+    api.latestDeployment?.addToLogicalId(createHash('sha256')
+      .update(JSON.stringify([T, sessionPutSchema, feedbackPostSchema, mentorRequestPostSchema, requestStatusSchema, BAD_BODY, GATEWAY_ERRORS]))
+      .digest('hex'));
+
+    // Consistent JSON errors for requests API Gateway rejects itself.
+    const gatewayError = (type: apigw.ResponseType, status: string, message: string) =>
+      api.addGatewayResponse(`Err${status}${type.responseType}`, { type, statusCode: status, templates: { 'application/json': `{"error": "${message}"}` } });
+    // Gateway responses don't support chained calls like .replaceAll(), so only escapeJavaScript here.
+    const responses = [
+      api.addGatewayResponse('ErrBadBody', { type: apigw.ResponseType.BAD_REQUEST_BODY, statusCode: '400', templates: { 'application/json': BAD_BODY } }),
+      ...GATEWAY_ERRORS.map(([type, status, message]) => gatewayError(apigw.ResponseType.of(type), status, message)),
+    ];
+    // A deployment snapshots the API when it's created, so it must come after the gateway responses.
+    for (const r of responses) api.latestDeployment?.node.addDependency(r);
+
+    const validator = new apigw.RequestValidator(this, 'BodyValidator', { restApi: api, validateRequestBody: true, validateRequestParameters: true });
+    const model = (name: string, schema: JsonSchema) =>
+      api.addModel(name, { modelName: name, contentType: 'application/json', schema: schema as apigw.JsonSchema });
+
+    const role = new iam.Role(this, 'ApiDynamoRole', { assumedBy: new iam.ServicePrincipal('apigateway.amazonaws.com'), description: 'Lets API Gateway write and read the app tables' });
+    role.addToPolicy(new iam.PolicyStatement({ actions: ['dynamodb:UpdateItem'], resources: [sessions.tableArn, requests.tableArn] }));
+    role.addToPolicy(new iam.PolicyStatement({ actions: ['dynamodb:PutItem'], resources: [feedback.tableArn, requests.tableArn] }));
+    role.addToPolicy(new iam.PolicyStatement({ actions: ['dynamodb:Scan'], resources: [sessions.tableArn, feedback.tableArn, requests.tableArn] }));
+
+    const json = (status: string) => ({ statusCode: status, responseModels: { 'application/json': apigw.Model.EMPTY_MODEL } });
+    const dynamo = (action: string, requestTemplate: string, ok: { status: string; template: string }, clientError = '{"error": "Invalid request"}') =>
+      new apigw.AwsIntegration({
+        service: 'dynamodb',
+        action,
+        options: {
+          credentialsRole: role,
+          passthroughBehavior: apigw.PassthroughBehavior.NEVER,
+          requestTemplates: { 'application/json': requestTemplate },
+          integrationResponses: [
+            { statusCode: ok.status, responseTemplates: { 'application/json': ok.template } },
+            { statusCode: '400', selectionPattern: '400', responseTemplates: { 'application/json': clientError } },
+            { statusCode: '500', selectionPattern: '5\\d{2}', responseTemplates: { 'application/json': T.serverError } },
+          ],
+        },
+      });
+    const methodResponses = (ok: string) => [json(ok), json('400'), json('403'), json('404'), json('500')];
+
+    const apiRoot = api.root.addResource('api');
+
+    // Public: save quiz progress, send feedback, ask a mentor.
+    apiRoot.addResource('sessions').addMethod('PUT',
+      dynamo('UpdateItem', T.sessionPutRequest(sessions.tableName), { status: '200', template: T.sessionPutOk }, T.sessionPutClientError),
+      { requestValidator: validator, requestModels: { 'application/json': model('SessionPut', sessionPutSchema) }, methodResponses: methodResponses('200') });
+    apiRoot.addResource('feedback').addMethod('POST',
+      dynamo('PutItem', T.feedbackPostRequest(feedback.tableName), { status: '201', template: T.createdResponse }),
+      { requestValidator: validator, requestModels: { 'application/json': model('FeedbackPost', feedbackPostSchema) }, methodResponses: methodResponses('201') });
+    apiRoot.addResource('mentor-requests').addMethod('POST',
+      dynamo('PutItem', T.mentorRequestPostRequest(requests.tableName), { status: '201', template: T.createdResponse }),
+      { requestValidator: validator, requestModels: { 'application/json': model('MentorRequestPost', mentorRequestPostSchema) }, methodResponses: methodResponses('201') });
+
+    // Admin: needs a Cognito access token in the X-Auth header. (A custom header, because
+    // CloudFront only forwards the Authorization header when it's part of the cache key.)
+    const authorizer = new apigw.CognitoUserPoolsAuthorizer(this, 'AdminAuthorizer', {
+      cognitoUserPools: [userPool],
+      identitySource: 'method.request.header.X-Auth',
+      resultsCacheTtl: Duration.minutes(5),
+    });
+    const adminOnly: apigw.MethodOptions = {
+      authorizer, authorizationType: apigw.AuthorizationType.COGNITO, authorizationScopes: ['openid'],
+    };
+    const admin = apiRoot.addResource('admin');
+    const scan = (path: string, table: ddb.Table, template: string) =>
+      admin.addResource(path).addMethod('GET', dynamo('Scan', T.scanRequest(table.tableName), { status: '200', template }), { ...adminOnly, methodResponses: methodResponses('200') });
+    scan('sessions', sessions, T.sessionsScanResponse);
+    scan('feedback', feedback, T.feedbackScanResponse);
+    const adminRequests = scan('requests', requests, T.requestsScanResponse).resource;
+    adminRequests.addResource('{id}').addMethod('PATCH',
+      dynamo('UpdateItem', T.requestStatusRequest(requests.tableName), { status: '200', template: T.requestStatusOk }, T.requestStatusClientError),
+      { ...adminOnly, requestValidator: validator, requestParameters: { 'method.request.path.id': true },
+        requestModels: { 'application/json': model('RequestStatus', requestStatusSchema) }, methodResponses: methodResponses('200') });
+
+    // ---------- CloudFront ----------
     // Send app routes like /mentors to index.html; leave files (with a dot) alone.
     const spaRewrite = new cf.Function(this, 'SpaRewrite', {
       runtime: cf.FunctionRuntime.JS_2_0,
@@ -131,16 +182,6 @@ export class MbqStack extends Stack {
   return r;
 }`),
     });
-
-    const apiOrigin = new origins.HttpOrigin(`${httpApi.apiId}.execute-api.${this.region}.${this.urlSuffix}`);
-    const apiBehavior: cf.BehaviorOptions = {
-      origin: apiOrigin,
-      viewerProtocolPolicy: cf.ViewerProtocolPolicy.HTTPS_ONLY,
-      allowedMethods: cf.AllowedMethods.ALLOW_ALL,
-      cachePolicy: cf.CachePolicy.CACHING_DISABLED,
-      originRequestPolicy: cf.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
-      responseHeadersPolicy: cf.ResponseHeadersPolicy.SECURITY_HEADERS,
-    };
     const distribution = new cf.Distribution(this, 'Cdn', {
       comment: `My Big Quest (${props.stage})`,
       defaultRootObject: 'index.html',
@@ -152,34 +193,20 @@ export class MbqStack extends Stack {
         responseHeadersPolicy: cf.ResponseHeadersPolicy.SECURITY_HEADERS,
         functionAssociations: [{ function: spaRewrite, eventType: cf.FunctionEventType.VIEWER_REQUEST }],
       },
-      additionalBehaviors: { '/api/*': apiBehavior },
+      additionalBehaviors: {
+        '/api/*': {
+          origin: new origins.RestApiOrigin(api),
+          viewerProtocolPolicy: cf.ViewerProtocolPolicy.HTTPS_ONLY,
+          allowedMethods: cf.AllowedMethods.ALLOW_ALL,
+          cachePolicy: cf.CachePolicy.CACHING_DISABLED,
+          originRequestPolicy: cf.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+          responseHeadersPolicy: cf.ResponseHeadersPolicy.SECURITY_HEADERS,
+        },
+      },
     });
     const siteUrl = `https://${distribution.distributionDomainName}`;
 
-    // ---------- admin sign-in (Cognito) ----------
-    const userPool = new cognito.UserPool(this, 'AdminUsers', {
-      userPoolName: `my-big-quest-admins-${props.stage}`,
-      selfSignUpEnabled: false, // admins are invited, nobody can sign up
-      signInAliases: { email: true },
-      autoVerify: { email: true },
-      standardAttributes: { email: { required: true, mutable: true } },
-      passwordPolicy: { minLength: 12, requireLowercase: true, requireUppercase: true, requireDigits: true, requireSymbols: false, tempPasswordValidity: Duration.days(7) },
-      mfa: cognito.Mfa.OPTIONAL,
-      mfaSecondFactor: { otp: true, sms: false },
-      accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
-      userInvitation: {
-        emailSubject: 'Your My Big Quest admin account',
-        emailBody: `You've been added as an admin for My Big Quest (${props.stage}). Sign in at ${siteUrl}/admin with your email address {username} and this temporary password: {####}`,
-      },
-      removalPolicy: prod ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
-    });
-    const adminsGroup = new cognito.CfnUserPoolGroup(this, 'AdminsGroup', { userPoolId: userPool.userPoolId, groupName: ADMIN_GROUP, description: 'Can use /admin' });
-
-    // Hosted login page at https://mbq-<stage>-<account>.auth.<region>.amazoncognito.com
-    const domain = userPool.addDomain('LoginDomain', {
-      cognitoDomain: { domainPrefix: Fn.join('-', ['mbq', props.stage, this.account]) },
-    });
-
+    // ---------- Cognito app client (needs the site URL for sign-in redirects) ----------
     const callbackUrls = [`${siteUrl}/admin`, ...(prod ? [] : ['http://localhost:5173/admin'])];
     const client = userPool.addClient('AdminWeb', {
       generateSecret: false, // browser app: public client with PKCE
@@ -200,43 +227,16 @@ export class MbqStack extends Stack {
         userAttributes: [{ name: 'email', value: props.adminEmail }, { name: 'email_verified', value: 'true' }],
         desiredDeliveryMediums: ['EMAIL'],
       });
-      const membership = new cognito.CfnUserPoolUserToGroupAttachment(this, 'FirstAdminInGroup', { userPoolId: userPool.userPoolId, groupName: ADMIN_GROUP, username: props.adminEmail });
-      membership.node.addDependency(user, adminsGroup);
       // Later deploys don't pass adminEmail; RETAIN keeps the user instead of deleting them then.
       user.applyRemovalPolicy(RemovalPolicy.RETAIN);
-      membership.applyRemovalPolicy(RemovalPolicy.RETAIN);
     }
-
-    apiFn.addEnvironment('COGNITO_CLIENT_ID', client.userPoolClientId);
-    apiFn.addEnvironment('COGNITO_DOMAIN', domain.baseUrl());
-
-    // ---------- API routes ----------
-    // API Gateway checks the Cognito token on every /api/admin/* call before the Lambda runs.
-    const integration = new HttpLambdaIntegration('ApiIntegration', apiFn);
-    httpApi.addRoutes({ path: '/api/{proxy+}', methods: [HttpMethod.ANY], integration });
-    httpApi.addRoutes({
-      path: '/api/admin/{proxy+}',
-      methods: [HttpMethod.ANY],
-      integration,
-      authorizer: new HttpUserPoolAuthorizer('AdminAuthorizer', userPool, { userPoolClients: [client] }),
-    });
-
-    // ---------- site files ----------
-    const dist = join(ROOT, 'web', 'dist');
-    if (!existsSync(join(dist, 'index.html'))) throw new Error('web/dist is missing. Run "npm run build -w web" before cdk synth/deploy.');
-    new s3deploy.BucketDeployment(this, 'DeploySite', {
-      sources: [s3deploy.Source.asset(dist)],
-      destinationBucket: site,
-      distribution,
-      distributionPaths: ['/*'],
-      memoryLimit: 512,
-    });
 
     new CfnOutput(this, 'Url', { value: siteUrl });
     new CfnOutput(this, 'AdminUrl', { value: `${siteUrl}/admin` });
-    new CfnOutput(this, 'UserPoolId', { value: userPool.userPoolId, description: 'Add admins here (Cognito console), in the "admins" group' });
+    new CfnOutput(this, 'SiteBucket', { value: site.bucketName });
+    new CfnOutput(this, 'DistributionId', { value: distribution.distributionId });
+    new CfnOutput(this, 'UserPoolId', { value: userPool.userPoolId, description: 'Add admins here (Cognito console). Everyone in this pool is an admin.' });
     new CfnOutput(this, 'UserPoolClientId', { value: client.userPoolClientId });
     new CfnOutput(this, 'CognitoDomain', { value: domain.baseUrl() });
-    new CfnOutput(this, 'DbEndpoint', { value: db.dbInstanceEndpointAddress });
   }
 }

@@ -9,12 +9,12 @@
     "typecheck": "tsc -p .",
     "test": "node --import tsx --test src/*.test.ts"
   },
-  "dependencies": {
-    "zod": "^3.25.76"
-  },
   "sideEffects": false,
   "exports": {
-    ".": "./src/index.ts",
-    "./schemas": "./src/api.ts"
+    ".": "./src/index.ts"
+  },
+  "devDependencies": {
+    "ajv": "^8.20.0",
+    "ajv-draft-04": "^1.0.0"
   }
 }

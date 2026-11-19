@@ -8,13 +8,16 @@
     "synth": "cdk synth",
     "diff": "cdk diff",
     "deploy": "cdk deploy",
-    "typecheck": "tsc -p ."
+    "typecheck": "tsc -p .",
+    "test": "node --import tsx --test test/*.test.ts"
   },
   "devDependencies": {
     "aws-cdk": "^2.1148.1",
-    "esbuild": "^0.25.12"
+    "esbuild": "^0.25.12",
+    "velocityjs": "^2.1.7"
   },
   "dependencies": {
+    "@mbq/shared": "*",
     "aws-cdk-lib": "^2.277.0",
     "constructs": "^10.8.1"
   }

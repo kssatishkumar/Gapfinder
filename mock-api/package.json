@@ -1,0 +1,16 @@
+{
+  "name": "@mbq/mock-api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "typecheck": "tsc -p .",
+    "test": "node --import tsx --test src/*.test.ts"
+  },
+  "dependencies": {
+    "@mbq/shared": "*",
+    "ajv": "^8.20.0",
+    "ajv-draft-04": "^1.0.0"
+  }
+}

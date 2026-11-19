@@ -1,42 +1,39 @@
-import { useCallback, useEffect, useState } from 'react';
-import { AREAS, REQUEST_STATUSES } from '@mbq/shared';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { AREAS, MENTOR_SEED, QUESTION_COUNT, REQUEST_STATUSES, summarize, type SessionRow, type FeedbackRow, type RequestRow } from '@mbq/shared';
 import { api, ApiError } from '../lib/api';
 import { completeSignIn, currentToken, fetchAuthConfig, forgetToken, signIn, signOut, type AuthConfig } from '../lib/auth';
 
 const areaTitle = (k: string | null) => AREAS.find(a => a.k === k)?.title ?? '—';
-const when = (s: string | null) => (s ? new Date(s).toLocaleString() : '—');
+const mentorName = (id: string) => MENTOR_SEED.find(m => m.id === id)?.name ?? id;
+const when = (ms: number | null) => (ms ? new Date(ms).toLocaleString() : '—');
+const newestFirst = <T extends { createdAt: number }>(rows: T[]) => [...rows].sort((a, b) => b.createdAt - a.createdAt);
 
-interface Summary {
-  sessions: { started: number; completed: number };
-  areas: { area: string; gap: number; partly: number; covered: number }[];
-  feedback: { rating: string; n: number }[];
-  requests: { status: string; n: number }[];
-}
-interface Req { id: string; mentor_name: string; grade: number | null; message: string; parent_email: string; status: string; created_at: string }
-interface Fb { id: string; rating: string; useful: string | null; wrong: string; wish: string; created_at: string }
-interface Sess { id: string; grade: number | null; pos: number; summary: { gapCount: number; partlyCount: number; coveredCount: number } | null; completed_at: string | null; created_at: string }
-
-const TABS = ['Overview', 'Mentor requests', 'Feedback', 'Quiz sessions'] as const;
+interface Data { sessions: SessionRow[]; feedback: FeedbackRow[]; requests: RequestRow[] }
 
 type View =
   | { s: 'loading' }
   | { s: 'error'; msg: string }
   | { s: 'signedOut'; cfg: AuthConfig; msg?: string }
-  | { s: 'forbidden'; cfg: AuthConfig; email: string | null }
-  | { s: 'in'; cfg: AuthConfig; token: string; email: string | null };
+  | { s: 'in'; cfg: AuthConfig; token: string; email: string | null; data: Data };
+
+const TABS = ['Overview', 'Mentor requests', 'Feedback', 'Quiz sessions'] as const;
+
+async function loadData(token: string): Promise<Data> {
+  const [sessions, feedback, requests] = await Promise.all([api.admin.sessions(token), api.admin.feedback(token), api.admin.requests(token)]);
+  return { sessions: newestFirst(sessions), feedback: newestFirst(feedback), requests: newestFirst(requests) };
+}
 
 export function Admin() {
   const [view, setView] = useState<View>({ s: 'loading' });
 
+  // Loading the data doubles as the sign-in check: API Gateway answers 401 for a missing or expired token.
   const refresh = useCallback(async (cfg: AuthConfig, msg?: string) => {
     const cur = currentToken(cfg);
     if (!cur) return setView({ s: 'signedOut', cfg, msg });
     try {
-      const me = await api.admin.me(cur.token);
-      setView({ s: 'in', cfg, token: cur.token, email: cur.email ?? me.email });
+      setView({ s: 'in', cfg, token: cur.token, email: cur.email, data: await loadData(cur.token) });
     } catch (e) {
-      if (e instanceof ApiError && e.status === 403) return setView({ s: 'forbidden', cfg, email: cur.email });
-      if (e instanceof ApiError && e.status === 401) { forgetToken(); return setView({ s: 'signedOut', cfg, msg: 'Your session ended. Sign in again.' }); }
+      if (e instanceof ApiError && (e.status === 401 || e.status === 403)) { forgetToken(); return setView({ s: 'signedOut', cfg, msg: 'Your session ended. Sign in again.' }); }
       setView({ s: 'error', msg: 'Couldn’t reach the server. Refresh to try again.' });
     }
   }, []);
@@ -44,26 +41,21 @@ export function Admin() {
   useEffect(() => {
     (async () => {
       let cfg: AuthConfig;
-      try { cfg = await fetchAuthConfig(); } catch { return setView({ s: 'error', msg: 'Couldn’t reach the server. Refresh to try again.' }); }
+      try { cfg = await fetchAuthConfig(); } catch { return setView({ s: 'error', msg: 'Couldn’t load the sign-in settings. Refresh to try again.' }); }
       let msg: string | undefined;
       try { await completeSignIn(cfg); } catch (e) { msg = (e as Error).message; }
       await refresh(cfg, msg);
     })();
   }, [refresh]);
 
-  const onAuthFail = useCallback(() => {
-    if (view.s !== 'in') return;
-    forgetToken();
-    setView({ s: 'signedOut', cfg: view.cfg, msg: 'Your session ended. Sign in again.' });
-  }, [view]);
-
   return (
     <main className="wrap page gap-22">
       <div className="row gap-10">
         <h1 className="h-page">Admin</h1>
-        {(view.s === 'in' || view.s === 'forbidden') && (
+        {view.s === 'in' && (
           <div className="row gap-10 ml-auto">
             {view.email && <span className="small muted">{view.email}</span>}
+            <button className="btn btn-ghost" onClick={() => refresh(view.cfg)}>Refresh</button>
             {view.cfg.mode === 'cognito' && <button className="btn btn-ghost" onClick={() => signOut(view.cfg)}>Sign out</button>}
           </div>
         )}
@@ -71,13 +63,7 @@ export function Admin() {
       {view.s === 'loading' && <p className="muted">Loading…</p>}
       {view.s === 'error' && <p className="error" role="alert">{view.msg}</p>}
       {view.s === 'signedOut' && <SignIn cfg={view.cfg} msg={view.msg} />}
-      {view.s === 'forbidden' && (
-        <div className="card stack gap-10" style={{ padding: 26, maxWidth: 520 }}>
-          <h4 style={{ margin: 0 }}>This account isn’t an admin</h4>
-          <p className="muted" style={{ margin: 0, fontSize: 15 }}>Ask an existing admin to add you to the “admins” group in Cognito, then sign out and back in.</p>
-        </div>
-      )}
-      {view.s === 'in' && <Dashboard token={view.token} onAuthFail={onAuthFail} />}
+      {view.s === 'in' && <Dashboard token={view.token} data={view.data} onChanged={() => refresh(view.cfg)} />}
     </main>
   );
 }
@@ -85,7 +71,7 @@ export function Admin() {
 function SignIn({ cfg, msg }: { cfg: AuthConfig; msg?: string }) {
   const [busy, setBusy] = useState(false);
   if (cfg.mode !== 'cognito') {
-    return <p className="error" role="alert">Admin sign-in isn’t set up on this server. See “Admin sign-in” in the README.</p>;
+    return <p className="error" role="alert">Admin sign-in isn’t set up for this site. See “Admin sign-in” in the README.</p>;
   }
   return (
     <div className="card stack gap-14" style={{ padding: 26, maxWidth: 460 }}>
@@ -96,44 +82,32 @@ function SignIn({ cfg, msg }: { cfg: AuthConfig; msg?: string }) {
   );
 }
 
-function useAdminData<T>(path: string, token: string, onAuthFail: () => void) {
-  const [data, setData] = useState<T | null>(null);
-  const [error, setError] = useState('');
-  const reload = useCallback(() => {
-    api.admin.get<T>(path, token).then(setData).catch(e => {
-      if (e instanceof ApiError && e.status === 401) onAuthFail(); else setError('Couldn’t load this. Refresh to try again.');
-    });
-  }, [path, token, onAuthFail]);
-  useEffect(reload, [reload]);
-  return { data, error, reload };
-}
-
-function Dashboard({ token, onAuthFail }: { token: string; onAuthFail: () => void }) {
+function Dashboard({ token, data, onChanged }: { token: string; data: Data; onChanged: () => void }) {
   const [tab, setTab] = useState<(typeof TABS)[number]>('Overview');
   return (
     <>
       <div className="row gap-8" role="tablist">
         {TABS.map(t => <button key={t} role="tab" className="filter" aria-selected={tab === t} aria-pressed={tab === t} onClick={() => setTab(t)}>{t}</button>)}
       </div>
-      {tab === 'Overview' && <Overview token={token} onAuthFail={onAuthFail} />}
-      {tab === 'Mentor requests' && <Requests token={token} onAuthFail={onAuthFail} />}
-      {tab === 'Feedback' && <Feedback token={token} onAuthFail={onAuthFail} />}
-      {tab === 'Quiz sessions' && <Sessions token={token} onAuthFail={onAuthFail} />}
+      {tab === 'Overview' && <Overview data={data} />}
+      {tab === 'Mentor requests' && <Requests token={token} rows={data.requests} onChanged={onChanged} />}
+      {tab === 'Feedback' && <Feedback rows={data.feedback} />}
+      {tab === 'Quiz sessions' && <Sessions rows={data.sessions} />}
     </>
   );
 }
 
-type P = { token: string; onAuthFail: () => void };
-const Status = ({ error, loading }: { error: string; loading: boolean }) =>
-  error ? <p className="error" role="alert">{error}</p> : loading ? <p className="muted">Loading…</p> : null;
-
-function Overview({ token, onAuthFail }: P) {
-  const { data, error } = useAdminData<Summary>('summary', token, onAuthFail);
-  if (!data) return <Status error={error} loading />;
-  const s = data.sessions;
-  const tiles = [
-    ['Quizzes started', s.started], ['Quizzes finished', s.completed],
-    ['Feedback', data.feedback.reduce((a, f) => a + f.n, 0)], ['New mentor requests', data.requests.find(r => r.status === 'new')?.n ?? 0],
+function Overview({ data }: { data: Data }) {
+  const finished = useMemo(() => data.sessions.filter(s => s.completedAt), [data.sessions]);
+  const areas = useMemo(() => {
+    const counts = Object.fromEntries(AREAS.map(a => [a.k, { gap: 0, partly: 0, covered: 0 }]));
+    for (const s of finished) for (const [k, v] of Object.entries(summarize(s.answers).statuses)) counts[k][v]++;
+    return counts;
+  }, [finished]);
+  const ratings = data.feedback.reduce<Record<string, number>>((acc, f) => ({ ...acc, [f.rating]: (acc[f.rating] ?? 0) + 1 }), {});
+  const tiles: [string, number][] = [
+    ['Quizzes started', data.sessions.length], ['Quizzes finished', finished.length],
+    ['Feedback', data.feedback.length], ['New mentor requests', data.requests.filter(r => r.status === 'new').length],
   ];
   return (
     <div className="stack gap-22">
@@ -144,35 +118,37 @@ function Overview({ token, onAuthFail }: P) {
         <h4 style={{ margin: 0 }}>Finished quizzes by area</h4>
         <table className="table admin-table">
           <thead><tr><th>Area</th><th>Gap</th><th>Partly</th><th>Covered</th></tr></thead>
-          <tbody>{AREAS.map(a => { const r = data.areas.find(x => x.area === a.k); return <tr key={a.k}><td>{a.title}</td><td>{r?.gap ?? 0}</td><td>{r?.partly ?? 0}</td><td>{r?.covered ?? 0}</td></tr>; })}</tbody>
+          <tbody>{AREAS.map(a => <tr key={a.k}><td>{a.title}</td><td>{areas[a.k].gap}</td><td>{areas[a.k].partly}</td><td>{areas[a.k].covered}</td></tr>)}</tbody>
         </table>
       </div>
       <div className="card" style={{ padding: 22, gap: 8 }}>
         <h4 style={{ margin: 0 }}>Feedback ratings</h4>
-        {data.feedback.length ? data.feedback.map(f => <span key={f.rating}>{f.rating}: <b>{f.n}</b></span>) : <span className="muted">None yet.</span>}
+        {Object.keys(ratings).length ? Object.entries(ratings).map(([r, n]) => <span key={r}>{r}: <b>{n}</b></span>) : <span className="muted">None yet.</span>}
       </div>
     </div>
   );
 }
 
-function Requests({ token, onAuthFail }: P) {
-  const { data, error, reload } = useAdminData<Req[]>('requests', token, onAuthFail);
+function Requests({ token, rows, onChanged }: { token: string; rows: RequestRow[]; onChanged: () => void }) {
   const [saving, setSaving] = useState('');
-  if (!data) return <Status error={error} loading />;
-  if (!data.length) return <p className="muted">No mentor requests yet.</p>;
+  const [error, setError] = useState('');
+  if (!rows.length) return <p className="muted">No mentor requests yet.</p>;
   const change = async (id: string, status: string) => {
-    setSaving(id);
-    try { await api.admin.setRequestStatus(id, status, token); reload(); } finally { setSaving(''); }
+    setSaving(id); setError('');
+    try { await api.admin.setRequestStatus(id, status, token); onChanged(); }
+    catch { setError('Couldn’t update that request. Try again.'); }
+    finally { setSaving(''); }
   };
   return (
     <div className="card scroll-x" style={{ padding: 22 }}>
+      {error && <p className="error" role="alert">{error}</p>}
       <table className="table admin-table">
         <thead><tr><th>When</th><th>Mentor</th><th>Grade</th><th>Message</th><th>Parent email</th><th>Status</th></tr></thead>
-        <tbody>{data.map(r => (
+        <tbody>{rows.map(r => (
           <tr key={r.id}>
-            <td>{when(r.created_at)}</td><td>{r.mentor_name}</td><td>{r.grade ?? '—'}</td>
+            <td>{when(r.createdAt)}</td><td>{mentorName(r.mentorId)}</td><td>{r.grade ?? '—'}</td>
             <td style={{ minWidth: 260, whiteSpace: 'pre-wrap' }}>{r.message}</td>
-            <td><a href={'mailto:' + r.parent_email}>{r.parent_email}</a></td>
+            <td><a href={'mailto:' + r.parentEmail}>{r.parentEmail}</a></td>
             <td><select className="input" value={r.status} disabled={saving === r.id} onChange={e => change(r.id, e.target.value)} aria-label="Status">{REQUEST_STATUSES.map(s => <option key={s}>{s}</option>)}</select></td>
           </tr>
         ))}</tbody>
@@ -181,33 +157,32 @@ function Requests({ token, onAuthFail }: P) {
   );
 }
 
-function Feedback({ token, onAuthFail }: P) {
-  const { data, error } = useAdminData<Fb[]>('feedback', token, onAuthFail);
-  if (!data) return <Status error={error} loading />;
-  if (!data.length) return <p className="muted">No feedback yet.</p>;
+function Feedback({ rows }: { rows: FeedbackRow[] }) {
+  if (!rows.length) return <p className="muted">No feedback yet.</p>;
   return (
     <div className="card scroll-x" style={{ padding: 22 }}>
       <table className="table admin-table">
         <thead><tr><th>When</th><th>Rating</th><th>Most useful</th><th>Felt wrong</th><th>Wishes</th></tr></thead>
-        <tbody>{data.map(f => <tr key={f.id}><td>{when(f.created_at)}</td><td>{f.rating}</td><td>{areaTitle(f.useful)}</td><td style={{ whiteSpace: 'pre-wrap' }}>{f.wrong || '—'}</td><td style={{ whiteSpace: 'pre-wrap' }}>{f.wish || '—'}</td></tr>)}</tbody>
+        <tbody>{rows.map(f => <tr key={f.id}><td>{when(f.createdAt)}</td><td>{f.rating}</td><td>{areaTitle(f.useful)}</td><td style={{ whiteSpace: 'pre-wrap' }}>{f.wrong || '—'}</td><td style={{ whiteSpace: 'pre-wrap' }}>{f.wish || '—'}</td></tr>)}</tbody>
       </table>
     </div>
   );
 }
 
-function Sessions({ token, onAuthFail }: P) {
-  const { data, error } = useAdminData<Sess[]>('sessions', token, onAuthFail);
-  if (!data) return <Status error={error} loading />;
-  if (!data.length) return <p className="muted">No quiz sessions yet.</p>;
+function Sessions({ rows }: { rows: SessionRow[] }) {
+  if (!rows.length) return <p className="muted">No quiz sessions yet.</p>;
   return (
     <div className="card scroll-x" style={{ padding: 22 }}>
       <table className="table admin-table">
         <thead><tr><th>Started</th><th>Grade</th><th>Progress</th><th>Gaps / partly / covered</th></tr></thead>
-        <tbody>{data.map(s => (
-          <tr key={s.id}><td>{when(s.created_at)}</td><td>{s.grade ?? '—'}</td>
-            <td>{s.completed_at ? 'Finished' : `Question ${Math.min(s.pos + 1, 9)} of 9`}</td>
-            <td>{s.summary ? `${s.summary.gapCount} / ${s.summary.partlyCount} / ${s.summary.coveredCount}` : '—'}</td></tr>
-        ))}</tbody>
+        <tbody>{rows.map(s => {
+          const sum = summarize(s.answers);
+          return (
+            <tr key={s.id}><td>{when(s.createdAt)}</td><td>{sum.grade ?? '—'}</td>
+              <td>{s.completedAt ? 'Finished' : `Question ${Math.min(s.pos + 1, QUESTION_COUNT)} of ${QUESTION_COUNT}`}</td>
+              <td>{s.completedAt ? `${sum.gapCount} / ${sum.partlyCount} / ${sum.coveredCount}` : '—'}</td></tr>
+          );
+        })}</tbody>
       </table>
     </div>
   );
