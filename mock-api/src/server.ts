@@ -63,8 +63,8 @@ export function createMockApi(dbFile: string | null) {
       if (!b) return;
       const existing = db.sessions.find(s => s.id === b.id);
       if (existing && existing.clientId !== b.clientId) return send(res, 403, { error: 'This session belongs to someone else' });
-      const row: SessionRow = existing ?? { id: b.id, clientId: b.clientId, answers: {}, pos: 0, createdAt: now, updatedAt: now, completedAt: null };
-      Object.assign(row, { answers: b.answers, pos: b.pos, updatedAt: now });
+      const row: SessionRow = existing ?? { id: b.id, clientId: b.clientId, name: b.name, answers: {}, pos: 0, createdAt: now, updatedAt: now, completedAt: null };
+      Object.assign(row, { name: b.name, answers: b.answers, pos: b.pos, updatedAt: now });
       if (b.completed && !row.completedAt) row.completedAt = now;
       if (!existing) db.sessions.push(row);
       persist();

@@ -8,6 +8,9 @@ import { RATINGS, REQUEST_STATUSES } from './constants';
 
 export type JsonSchema = Record<string, unknown>;
 
+/** Longest name a student can enter before the quiz. */
+export const NAME_MAX = 60;
+
 const UUID = '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';
 const uuid = { type: 'string', pattern: UUID };
 const uuidOrNull = { type: ['string', 'null'], pattern: UUID };
@@ -27,6 +30,7 @@ export const answersSchema: JsonSchema = {
 export const sessionPutSchema = obj({
   id: uuid,
   clientId: uuid,
+  name: { type: 'string', minLength: 1, maxLength: NAME_MAX, pattern: '\\S' },
   answers: answersSchema,
   pos: { type: 'integer', minimum: 0, maximum: QUESTION_COUNT },
   completed: { type: 'boolean' },
@@ -57,11 +61,11 @@ export const mentorRequestPostSchema = obj({
 export const requestStatusSchema = obj({ status: { type: 'string', enum: [...REQUEST_STATUSES] } });
 
 // ---------- TypeScript shapes of the same bodies ----------
-export interface SessionPut { id: string; clientId: string; answers: Record<string, string>; pos: number; completed: boolean }
+export interface SessionPut { id: string; clientId: string; name: string; answers: Record<string, string>; pos: number; completed: boolean }
 export interface FeedbackPost { clientId: string; sessionId: string | null; rating: (typeof RATINGS)[number]; useful: string | null; wrong: string; wish: string }
 export interface MentorRequestPost { clientId: string; sessionId: string | null; mentorId: string; grade: number | null; message: string; parentEmail: string }
 
 // ---------- what the admin endpoints return ----------
-export interface SessionRow { id: string; clientId: string; answers: Record<string, string>; pos: number; createdAt: number; updatedAt: number; completedAt: number | null }
+export interface SessionRow { id: string; clientId: string; name: string | null; answers: Record<string, string>; pos: number; createdAt: number; updatedAt: number; completedAt: number | null }
 export interface FeedbackRow { id: string; clientId: string; sessionId: string | null; rating: string; useful: string | null; wrong: string; wish: string; createdAt: number }
 export interface RequestRow { id: string; clientId: string; sessionId: string | null; mentorId: string; grade: number | null; message: string; parentEmail: string; status: string; createdAt: number; updatedAt: number }

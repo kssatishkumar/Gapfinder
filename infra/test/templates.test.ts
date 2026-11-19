@@ -47,23 +47,27 @@ const NASTY = `He said "hi" & it's \\fine\\ — <b>ok</b>\nline 2\ttab 🙂 $uti
 const ids = { s: '3f2b8c1e-5a6d-4e7f-8a9b-0c1d2e3f4a5b', c: '11111111-2222-4333-8444-555555555555' };
 
 test('session PUT → UpdateItem with ownership condition; answers round-trip through a scan', () => {
-  const body = { id: ids.s, clientId: ids.c, answers: { grade: '9', depth: 'a3', depth_text: `it's "chess"` }, pos: 9, completed: true };
+  const body = { id: ids.s, clientId: ids.c, name: NASTY, answers: { grade: '9', depth: 'a3', depth_text: `it's "chess"` }, pos: 9, completed: true };
   const req = render(T.sessionPutRequest('Sessions'), body).json();
   assert.equal(req.TableName, 'Sessions');
   assert.deepEqual(req.Key, { id: { S: ids.s } });
   assert.match(req.UpdateExpression, /completedAt = if_not_exists\(completedAt, :t\)/);
   assert.equal(req.ConditionExpression, 'attribute_not_exists(id) OR clientId = :c');
   assert.equal(req.ExpressionAttributeValues[':p'].N, '9');
+  assert.equal(req.ExpressionAttributeValues[':n'].S, NASTY);
+  assert.deepEqual(req.ExpressionAttributeNames, { '#n': 'name' }, 'name is a DynamoDB reserved word');
+  assert.match(req.UpdateExpression, /#n = :n/);
   assert.deepEqual(JSON.parse(req.ExpressionAttributeValues[':a'].S), body.answers, 'answers stored as exact JSON');
 
   const notDone = render(T.sessionPutRequest('Sessions'), { ...body, completed: false, pos: 3 }).json();
   assert.doesNotMatch(notDone.UpdateExpression, /completedAt/);
 
-  const stored = { id: { S: ids.s }, clientId: { S: ids.c }, answers: { S: req.ExpressionAttributeValues[':a'].S }, pos: { N: '9' }, createdAt: { N: '1' }, updatedAt: { N: '2' }, completedAt: { N: '2' } };
+  const stored = { id: { S: ids.s }, clientId: { S: ids.c }, name: { S: NASTY }, answers: { S: req.ExpressionAttributeValues[':a'].S }, pos: { N: '9' }, createdAt: { N: '1' }, updatedAt: { N: '2' }, completedAt: { N: '2' } };
   const inProgress = { id: { S: 'x' }, clientId: { S: ids.c }, answers: { S: '{}' }, pos: { N: '0' }, createdAt: { N: '1' }, updatedAt: { N: '1' } };
   const rows = render(T.sessionsScanResponse, { Items: [stored, inProgress] }).json();
-  assert.deepEqual(rows[0], { id: ids.s, clientId: ids.c, answers: body.answers, pos: 9, createdAt: 1, updatedAt: 2, completedAt: 2 });
+  assert.deepEqual(rows[0], { id: ids.s, clientId: ids.c, name: NASTY, answers: body.answers, pos: 9, createdAt: 1, updatedAt: 2, completedAt: 2 });
   assert.equal(rows[1].completedAt, null);
+  assert.equal(rows[1].name, null, 'sessions saved before names were asked');
   assert.deepEqual(render(T.sessionsScanResponse, { Items: [] }).json(), []);
 });
 

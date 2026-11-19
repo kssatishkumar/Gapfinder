@@ -18,10 +18,12 @@ export const sessionPutRequest = (table: string) => `#set($b = $input.path('$'))
 {
   "TableName": "${table}",
   "Key": { "id": { "S": "$b.id" } },
-  "UpdateExpression": "SET clientId = :c, answers = :a, pos = :p, updatedAt = :t, createdAt = if_not_exists(createdAt, :t)#if($b.completed), completedAt = if_not_exists(completedAt, :t)#end",
+  "UpdateExpression": "SET clientId = :c, #n = :n, answers = :a, pos = :p, updatedAt = :t, createdAt = if_not_exists(createdAt, :t)#if($b.completed), completedAt = if_not_exists(completedAt, :t)#end",
   "ConditionExpression": "attribute_not_exists(id) OR clientId = :c",
+  "ExpressionAttributeNames": { "#n": "name" },
   "ExpressionAttributeValues": {
     ":c": { "S": "$b.clientId" },
+    ":n": { "S": "${esc('$b.name')}" },
     ":a": { "S": "${esc("$input.json('$.answers')")}" },
     ":p": { "N": "$b.pos" },
     ":t": { "N": "$context.requestTimeEpoch" }
@@ -40,7 +42,7 @@ export const sessionPutClientError = `#set($t = "$input.path('$.__type')")
 #end`;
 
 export const sessionsScanResponse = `#set($items = $input.path('$.Items'))
-[#foreach($i in $items){"id": "$i.id.S", "clientId": "$i.clientId.S", "answers": $i.answers.S, "pos": $i.pos.N,"createdAt": $i.createdAt.N, "updatedAt": $i.updatedAt.N, "completedAt": #if($i.completedAt)$i.completedAt.N#{else}null#end}#if($foreach.hasNext), #end#end]`;
+[#foreach($i in $items){"id": "$i.id.S", "clientId": "$i.clientId.S", "name": #if($i.name)"${esc('$i.name.S')}"#{else}null#end, "answers": $i.answers.S, "pos": $i.pos.N,"createdAt": $i.createdAt.N, "updatedAt": $i.updatedAt.N, "completedAt": #if($i.completedAt)$i.completedAt.N#{else}null#end}#if($foreach.hasNext), #end#end]`;
 
 // ---------- feedback ----------
 

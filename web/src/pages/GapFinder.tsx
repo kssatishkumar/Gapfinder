@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { AREAS, QUESTIONS, QUESTION_COUNT, TEXT_MAX, RATINGS, answerLabel, isHighSchool, summarize, type Answers, type Question } from '@mbq/shared';
+import { AREAS, NAME_MAX, QUESTIONS, QUESTION_COUNT, TEXT_MAX, RATINGS, answerLabel, isHighSchool, summarize, type Answers, type Question } from '@mbq/shared';
 import { useQuiz } from '../lib/quizState';
 import { clientId } from '../lib/storage';
 import { SHOW_MENTORS } from '../lib/features';
@@ -28,17 +28,25 @@ export function GapFinder() {
   const restart = () => { clearTimeout(adv.current); setFb(null); quiz.reset(); };
 
   let body;
-  if (!quiz.started) body = <Intro quiz={quiz} onRestart={restart} />;
+  // Older saved progress has no name: ask for it before carrying on.
+  if (!quiz.started || !quiz.name.trim()) body = <Intro quiz={quiz} onRestart={restart} />;
   else if (!quiz.done) body = <QuizPaged quiz={quiz} onAnswer={answer} />;
   else if (fb === 'form') body = <FeedbackForm quiz={quiz} onClose={() => setFb(null)} onSent={() => setFb('sent')} />;
   else if (fb === 'sent') body = <FeedbackSent onClose={() => setFb(null)} onRestart={restart} />;
-  else body = <Results answers={quiz.answers} onFeedback={() => setFb('form')} onEdit={() => setPos(0)} onRestart={restart} />;
+  else body = <Results name={quiz.name.trim()} answers={quiz.answers} onFeedback={() => setFb('form')} onEdit={() => setPos(0)} onRestart={restart} />;
 
   return <main className="wrap stack gap-28" style={{ paddingTop: 4, paddingBottom: 56 }}>{body}</main>;
 }
 
 function Intro({ quiz, onRestart }: { quiz: Quiz; onRestart: () => void }) {
   const hasProgress = quiz.pos > 0;
+  const [tried, setTried] = useState(false);
+  const hasName = !!quiz.name.trim();
+  const start = (e: FormEvent) => {
+    e.preventDefault();
+    if (!hasName) { setTried(true); document.getElementById('quiz-name')?.focus(); return; }
+    quiz.update(p => ({ name: p.name.trim(), started: true }));
+  };
   return (
     <section className="grid auto-380" style={{ gap: 48, paddingTop: 20 }}>
       <div className="stack gap-22 mw-600">
@@ -50,11 +58,20 @@ function Intro({ quiz, onRestart }: { quiz: Quiz; onRestart: () => void }) {
           <li><span className="num" style={{ background: 'var(--color-accent-2)' }}>2</span><span>See your gaps, what colleges look for in each one, and a first step.</span></li>
         </ol>
         <div className="row gap-8"><span className="tag tag-neutral">9 questions</span><span className="tag tag-neutral">About 1 minute</span><span className="tag tag-neutral">No sign-up</span></div>
-        <div className="row gap-10" style={{ marginTop: 4 }}>
-          <button className="btn btn-primary btn-lg" onClick={() => quiz.update({ started: true })}>{hasProgress ? 'Continue where I left off' : 'Start'}</button>
-          {hasProgress && <button className="btn btn-ghost" style={{ fontSize: 16 }} onClick={onRestart}>Start over</button>}
-        </div>
-        <p className="tiny muted" style={{ margin: 0 }}>We save your answers without your name, to improve GapFinder. Your progress is also kept on this device.</p>
+        <form className="stack gap-14" style={{ marginTop: 4 }} onSubmit={start} noValidate>
+          <div className="field mw-560">
+            <label htmlFor="quiz-name">Your name</label>
+            <input id="quiz-name" className="input" value={quiz.name} maxLength={NAME_MAX} autoComplete="given-name" placeholder="First name is fine"
+              aria-invalid={tried && !hasName} aria-describedby={tried && !hasName ? 'quiz-name-err' : undefined}
+              onChange={e => { const v = e.target.value; quiz.update({ name: v }); }} style={{ minHeight: 52, fontSize: 16 }} />
+            {tried && !hasName && <span id="quiz-name-err" className="small" style={{ color: 'var(--color-accent-800)', fontWeight: 600 }}>Enter your name to start.</span>}
+          </div>
+          <div className="row gap-10">
+            <button type="submit" className="btn btn-primary btn-lg">{hasProgress ? 'Continue where I left off' : 'Start'}</button>
+            {hasProgress && <button type="button" className="btn btn-ghost" style={{ fontSize: 16 }} onClick={onRestart}>Start over</button>}
+          </div>
+        </form>
+        <p className="tiny muted" style={{ margin: 0 }}>We save your name and answers to improve GapFinder. Your progress is also kept on this device.</p>
       </div>
       <div className="stack gap-16">
         <div className="card elev-sm" style={{ padding: 26, gap: 12, background: 'var(--color-accent-2-100)' }}>
@@ -121,7 +138,7 @@ function QuizPaged({ quiz, onAnswer }: { quiz: Quiz; onAnswer: (q: Question, id:
 
 const FACTORS = [['Grades in core classes', 77], ['How hard your classes are', 64], ['SAT or ACT scores', 5]] as const;
 
-function Results({ answers, onFeedback, onEdit, onRestart }: { answers: Answers; onFeedback: () => void; onEdit: () => void; onRestart: () => void }) {
+function Results({ name, answers, onFeedback, onEdit, onRestart }: { name: string; answers: Answers; onFeedback: () => void; onEdit: () => void; onRestart: () => void }) {
   const st = summarize(answers).statuses;
   const hs = isHighSchool(answers);
   const todo = AREAS.filter(a => st[a.k] !== 'covered').sort((a, b) => (st[a.k] === 'gap' ? 0 : 1) - (st[b.k] === 'gap' ? 0 : 1));
@@ -136,7 +153,7 @@ function Results({ answers, onFeedback, onEdit, onRestart }: { answers: Answers;
     <>
       <section className="grid auto-360" style={{ gap: 32, paddingTop: 8 }}>
         <div className="stack gap-14 mw-620">
-          <span className="card-kicker kicker">Your GapFinder results</span>
+          <span className="card-kicker kicker">{name ? `${name}’s GapFinder results` : 'Your GapFinder results'}</span>
           <h1 style={{ margin: 0, fontSize: 'clamp(34px,5.4vw,50px)', textWrap: 'balance' }}>{headline}</h1>
           <p className="muted" style={{ margin: 0, fontSize: 17 }}>{summary}</p>
         </div>

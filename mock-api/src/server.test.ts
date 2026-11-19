@@ -18,10 +18,10 @@ const id = randomUUID();
 const admin = { 'x-auth': 'dev' };
 
 test('session autosave, ownership, and validation', async () => {
-  assert.equal((await call('PUT', '/api/sessions', { id, clientId, answers: { grade: '9' }, pos: 1, completed: false })).status, 200);
-  assert.equal((await call('PUT', '/api/sessions', { id, clientId, answers: { grade: '9', rigor: 'a2' }, pos: 9, completed: true })).status, 200);
-  assert.equal((await call('PUT', '/api/sessions', { id, clientId: randomUUID(), answers: {}, pos: 0, completed: false })).status, 403);
-  const bad = await call('PUT', '/api/sessions', { id, clientId, answers: { rigor: 'a9' }, pos: 1, completed: false });
+  assert.equal((await call('PUT', '/api/sessions', { id, clientId, name: 'Maya', answers: { grade: '9' }, pos: 1, completed: false })).status, 200);
+  assert.equal((await call('PUT', '/api/sessions', { id, clientId, name: 'Maya', answers: { grade: '9', rigor: 'a2' }, pos: 9, completed: true })).status, 200);
+  assert.equal((await call('PUT', '/api/sessions', { id, clientId: randomUUID(), name: 'Maya', answers: {}, pos: 0, completed: false })).status, 403);
+  const bad = await call('PUT', '/api/sessions', { id, clientId, name: 'Maya', answers: { rigor: 'a9' }, pos: 1, completed: false });
   assert.equal(bad.status, 400);
   assert.equal(bad.json.error, 'Invalid request');
 });
@@ -34,6 +34,7 @@ test('feedback and mentor requests are stored; admin needs X-Auth', async () => 
   assert.equal((await call('GET', '/api/admin/sessions')).status, 401);
   const sessions = await call('GET', '/api/admin/sessions', undefined, admin);
   assert.equal(sessions.json[0].pos, 9);
+  assert.equal(sessions.json[0].name, 'Maya');
   assert.ok(sessions.json[0].completedAt);
   assert.equal((await call('GET', '/api/admin/feedback', undefined, admin)).json.length, 1);
   const reqs = (await call('GET', '/api/admin/requests', undefined, admin)).json;

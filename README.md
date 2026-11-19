@@ -23,15 +23,15 @@ Browser → CloudFront ─┬─ /*      → S3 (the React app)
                                     └─ /api/admin/* needs a Cognito sign-in
 ```
 
-Students don't sign up. Each browser gets a random anonymous id, and the quiz autosaves as they answer. API Gateway checks every request against the JSON schemas in `shared/src/schemas.ts` (for example, only real question and answer ids are accepted), then a mapping template turns it into a DynamoDB call.
+Students don't sign up. They type their name before the quiz starts, each browser gets a random id, and the quiz autosaves as they answer. API Gateway checks every request against the JSON schemas in `shared/src/schemas.ts` (for example, only real question and answer ids are accepted), then a mapping template turns it into a DynamoDB call.
 
 | DynamoDB table | Holds |
 | --- | --- |
-| Quiz sessions | Answers, how far the student got, and when they finished. A browser can only update its own session |
+| Quiz sessions | The student's name, their answers, how far they got, and when they finished. A browser can only update its own session |
 | Feedback | The post-quiz feedback form |
-| Mentor requests | Chat requests, with the parent or guardian's email, the only personal data collected |
+| Mentor requests | Chat requests, with the parent or guardian's email |
 
-The admin page reads these tables and works out the stats (gaps per area, ratings) in the browser. The mentor list is part of the site (`shared/src/mentors.ts`).
+The admin page reads these tables and works out the stats (gaps per area, ratings) in the browser. Overview, Feedback and Quiz sessions each have a **Download CSV** button (built in the browser too, in `shared/src/csv.ts`) that opens in Excel or Google Sheets. The Overview file is totals only, by grade, with no personal data, so it's the one to share. Quiz sessions can also be downloaded without names. Mentor requests can't be downloaded, so parents' emails stay behind the admin sign-in. The mentor list is part of the site (`shared/src/mentors.ts`).
 
 ## Run it locally
 

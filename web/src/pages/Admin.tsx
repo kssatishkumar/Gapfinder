@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AREAS, MENTOR_SEED, QUESTION_COUNT, REQUEST_STATUSES, summarize, type SessionRow, type FeedbackRow, type RequestRow } from '@mbq/shared';
+import { AREAS, MENTOR_SEED, QUESTION_COUNT, REQUEST_STATUSES, summarize, sessionsCsv, feedbackCsv, overviewCsv, csvDate, type SessionRow, type FeedbackRow, type RequestRow } from '@mbq/shared';
 import { api, ApiError } from '../lib/api';
 import { completeSignIn, currentToken, fetchAuthConfig, forgetToken, signIn, signOut, type AuthConfig } from '../lib/auth';
 
@@ -17,6 +17,27 @@ type View =
   | { s: 'in'; cfg: AuthConfig; token: string; email: string | null; data: Data };
 
 const TABS = ['Overview', 'Mentor requests', 'Feedback', 'Quiz sessions'] as const;
+type Tab = (typeof TABS)[number];
+
+interface Export { label: string; file: string; csv: (d: Data) => string; empty: (d: Data) => boolean }
+/** CSV downloads offered on each tab. Mentor requests has none: they hold parents' emails, which stay behind the sign-in. */
+const EXPORTS: Partial<Record<Tab, Export[]>> = {
+  Overview: [{ label: 'Download CSV', file: 'overview', csv: d => overviewCsv(d.sessions, d.feedback), empty: () => false }],
+  Feedback: [{ label: 'Download CSV', file: 'feedback', csv: d => feedbackCsv(d.feedback), empty: d => !d.feedback.length }],
+  'Quiz sessions': [
+    { label: 'Download CSV', file: 'quiz-sessions', csv: d => sessionsCsv(d.sessions), empty: d => !d.sessions.length },
+    { label: 'Download without names', file: 'quiz-sessions-no-names', csv: d => sessionsCsv(d.sessions, { names: false }), empty: d => !d.sessions.length },
+  ],
+};
+
+function download(name: string, text: string) {
+  const url = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
+  const a = Object.assign(document.createElement('a'), { href: url, download: name });
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
 async function loadData(token: string): Promise<Data> {
   const [sessions, feedback, requests] = await Promise.all([api.admin.sessions(token), api.admin.feedback(token), api.admin.requests(token)]);
@@ -83,11 +104,19 @@ function SignIn({ cfg, msg }: { cfg: AuthConfig; msg?: string }) {
 }
 
 function Dashboard({ token, data, onChanged }: { token: string; data: Data; onChanged: () => void }) {
-  const [tab, setTab] = useState<(typeof TABS)[number]>('Overview');
+  const [tab, setTab] = useState<Tab>('Overview');
+  const exportAs = (e: Export) => download(`mybigquest-${e.file}-${csvDate(Date.now()).slice(0, 10)}.csv`, e.csv(data));
   return (
     <>
-      <div className="row gap-8" role="tablist">
-        {TABS.map(t => <button key={t} role="tab" className="filter" aria-selected={tab === t} aria-pressed={tab === t} onClick={() => setTab(t)}>{t}</button>)}
+      <div className="row gap-8">
+        <div className="row gap-8" role="tablist">
+          {TABS.map(t => <button key={t} role="tab" className="filter" aria-selected={tab === t} aria-pressed={tab === t} onClick={() => setTab(t)}>{t}</button>)}
+        </div>
+        <div className="row gap-8 ml-auto">
+          {(EXPORTS[tab] ?? []).map((e, i) => (
+            <button key={e.file} className={i === 0 ? 'btn btn-secondary' : 'btn btn-ghost'} disabled={e.empty(data)} onClick={() => exportAs(e)}>{e.label}</button>
+          ))}
+        </div>
       </div>
       {tab === 'Overview' && <Overview data={data} />}
       {tab === 'Mentor requests' && <Requests token={token} rows={data.requests} onChanged={onChanged} />}
@@ -174,11 +203,11 @@ function Sessions({ rows }: { rows: SessionRow[] }) {
   return (
     <div className="card scroll-x" style={{ padding: 22 }}>
       <table className="table admin-table">
-        <thead><tr><th>Started</th><th>Grade</th><th>Progress</th><th>Gaps / partly / covered</th></tr></thead>
+        <thead><tr><th>Started</th><th>Name</th><th>Grade</th><th>Progress</th><th>Gaps / partly / covered</th></tr></thead>
         <tbody>{rows.map(s => {
           const sum = summarize(s.answers);
           return (
-            <tr key={s.id}><td>{when(s.createdAt)}</td><td>{sum.grade ?? '—'}</td>
+            <tr key={s.id}><td>{when(s.createdAt)}</td><td>{s.name || '—'}</td><td>{sum.grade ?? '—'}</td>
               <td>{s.completedAt ? 'Finished' : `Question ${Math.min(s.pos + 1, QUESTION_COUNT)} of ${QUESTION_COUNT}`}</td>
               <td>{s.completedAt ? `${sum.gapCount} / ${sum.partlyCount} / ${sum.coveredCount}` : '—'}</td></tr>
           );
