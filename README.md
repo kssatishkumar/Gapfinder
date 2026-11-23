@@ -89,6 +89,50 @@ Cost at low traffic is close to $0: DynamoDB, API Gateway and CloudFront are pay
 
 The site's S3 bucket is kept if the stack is deleted (emptying it automatically would need a Lambda). Empty and delete it by hand if you tear a stage down.
 
+### Deploy from your own computer
+
+Anyone in the `mbq-deployers` IAM group can deploy. The group's `MyBigQuestDeploy` policy only lets them run CDK's deploy and upload roles, upload the site, and clear the CloudFront cache. They can't read the student data, sign in to the AWS console, or touch anything else in the account.
+
+**One-time setup:**
+
+1. Install [Node.js 22+](https://nodejs.org), [Git](https://git-scm.com), and the [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
+2. Save the access key you were sent as an AWS profile. Paste the key ID and secret when asked, enter `us-east-1` for the region, and `json` for the output format:
+   ```bash
+   aws configure --profile mbq
+   ```
+3. Check that it works. It should print an ARN ending in your user name:
+   ```bash
+   aws sts get-caller-identity --profile mbq
+   ```
+4. Get the code:
+   ```bash
+   git clone https://github.com/kssatishkumar/Gapfinder
+   cd Gapfinder
+   npm install
+   ```
+
+**Each deploy:**
+
+```bash
+git pull
+npm install
+npm run deploy -- staging --profile mbq
+```
+
+Always `git pull` first. A deploy from an older copy puts staging back to that older version. Keep the access key secret: don't commit it, paste it into chat, or put it in a `.env` file in the repo.
+
+**To give someone access** (needs an account admin):
+
+```bash
+aws iam create-user --user-name <name> --tags Key=project,Value=my-big-quest
+```
+
+```bash
+aws iam add-user-to-group --group-name mbq-deployers --user-name <name>
+```
+
+Then in the IAM console, open **Users** → the user → **Security credentials** → **Create access key**, choose **Command Line Interface (CLI)**, and send them the key privately. To remove access, delete the user's access key or the user.
+
 ### Admin sign-in
 
 Admins sign in with Amazon Cognito at `<site>/admin`. Everyone in the stage's Cognito user pool is an admin, and there's no sign-up, so admins have to be invited:
